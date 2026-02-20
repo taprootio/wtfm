@@ -1,3 +1,10 @@
+## [0.2.4](https://github.com/taprootio/wtfm/compare/v0.2.3...v0.2.4) (2026-02-20)
+
+
+### Bug Fixes
+
+* build ([f15f9cb](https://github.com/taprootio/wtfm/commit/f15f9cb01a5a7bd2e87c3cf9cb35621f3eee7973))
+
 ## [0.2.3](https://github.com/taprootio/wtfm/compare/v0.2.2...v0.2.3) (2026-02-20)
 
 
