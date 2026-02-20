@@ -1,3 +1,10 @@
+## [0.3.0](https://github.com/taprootio/wtfm/compare/v0.2.4...v0.3.0) (2026-02-20)
+
+
+### Features
+
+* make shiki and prettier hard dependencies ([6cd7f3a](https://github.com/taprootio/wtfm/commit/6cd7f3a312fe8d8e2140a1f15b76ce4a35b4dbb6))
+
 ## [0.2.4](https://github.com/taprootio/wtfm/compare/v0.2.3...v0.2.4) (2026-02-20)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * taproot-controls ref ([18397f6](https://github.com/taprootio/wtfm/commit/18397f6b038a746b30a1e6c09f57cb8564990469))
-
-## [0.2.0](https://github.com/taprootio/wtfm/compare/ec71417b6b79ef097a9d4f72ab3f398ed6617808...v0.2.0) (2026-02-20)
-
-
-### Features
-
-* CI ([ec71417](https://github.com/taprootio/wtfm/commit/ec71417b6b79ef097a9d4f72ab3f398ed6617808))
 
