@@ -92,7 +92,7 @@
     }
   },
   "devDependencies": {
-    "@taprootio/taproot-controls": "file:../taproot-controls",
+    "@taprootio/taproot-controls": ">=1.107.0",
     "lit": "^3.2.1",
     "shiki": "^3.13.0",
     "typescript": "~5.7.2",
