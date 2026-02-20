@@ -1,0 +1,104 @@
+{
+  "name": "@taprootio/wtfm",
+  "version": "0.1.0",
+  "description": "WTFM — documentation tooling for Custom Elements Manifest-based component libraries",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/server/eleventy-plugin.d.ts",
+      "default": "./dist/server/eleventy-plugin.js"
+    },
+    "./plugin": {
+      "types": "./dist/server/eleventy-plugin.d.ts",
+      "default": "./dist/server/eleventy-plugin.js"
+    },
+    "./renderers": {
+      "types": "./dist/server/section-renderers/index.d.ts",
+      "default": "./dist/server/section-renderers/index.js"
+    },
+    "./renderers/*": {
+      "types": "./dist/server/section-renderers/*.d.ts",
+      "default": "./dist/server/section-renderers/*.js"
+    },
+    "./data/components": {
+      "types": "./dist/server/data/components.d.ts",
+      "default": "./dist/server/data/components.js"
+    },
+    "./data/manifest": {
+      "types": "./dist/server/data/manifest.d.ts",
+      "default": "./dist/server/data/manifest.js"
+    },
+    "./rollup/manifest": {
+      "types": "./dist/server/rollup/plugin-manifest.d.ts",
+      "default": "./dist/server/rollup/plugin-manifest.js"
+    },
+    "./rollup/copy-assets": {
+      "types": "./dist/server/rollup/plugin-copy-assets.d.ts",
+      "default": "./dist/server/rollup/plugin-copy-assets.js"
+    },
+    "./client/runtime": {
+      "types": "./dist/client/wtfm-runtime.d.ts",
+      "default": "./dist/client/wtfm-runtime.js"
+    },
+    "./client/code-block": {
+      "types": "./dist/client/wtfm-code-block.d.ts",
+      "default": "./dist/client/wtfm-code-block.js"
+    },
+    "./client/theme": {
+      "types": "./dist/client/create-shiki-theme.d.ts",
+      "default": "./dist/client/create-shiki-theme.js"
+    },
+    "./client/oklch": {
+      "types": "./dist/client/oklch-to-hex.d.ts",
+      "default": "./dist/client/oklch-to-hex.js"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "mkdir -p dist && cp -r src/server dist/server",
+    "build:client": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taprootio/wtfm.git"
+  },
+  "author": "Jereme Evans",
+  "license": "ISC",
+  "dependencies": {
+    "markdown-it": "^14.1.0",
+    "markdown-it-mathjax3": "^5.2.0",
+    "prettier": "^3.6.2"
+  },
+  "peerDependencies": {
+    "@taprootio/taproot-controls": ">=1.107.0",
+    "lit": "^3.0.0",
+    "shiki": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@taprootio/taproot-controls": {
+      "optional": true
+    },
+    "lit": {
+      "optional": true
+    },
+    "shiki": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@taprootio/taproot-controls": "file:../taproot-controls",
+    "lit": "^3.2.1",
+    "shiki": "^3.13.0",
+    "typescript": "~5.7.2",
+    "vitest": "^4.0.18"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
