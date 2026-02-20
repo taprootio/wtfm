@@ -1,3 +1,10 @@
+## [0.2.3](https://github.com/taprootio/wtfm/compare/v0.2.2...v0.2.3) (2026-02-20)
+
+
+### Bug Fixes
+
+* taproot-controls ref ([d8e841e](https://github.com/taprootio/wtfm/commit/d8e841e22598ba6348c2afecf64340f060975a76))
+
 ## [0.2.2](https://github.com/taprootio/wtfm/compare/v0.2.1...v0.2.2) (2026-02-20)
 
 
