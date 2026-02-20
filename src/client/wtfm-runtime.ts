@@ -1,9 +1,15 @@
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import type { HighlighterCore, ThemeRegistrationAny, LanguageRegistration } from "shiki";
+import html from "@shikijs/langs/html";
+import javascript from "@shikijs/langs/javascript";
+import xml from "@shikijs/langs/xml";
 import { setHighlighter } from "./wtfm-highlighter.js";
 
 // ── Types ──────────────────────────────────────────────────────
+
+/** Built-in language registrations (HTML, JavaScript, XML). */
+const defaultLangs: LanguageRegistration[][] = [html, javascript, xml];
 
 export interface WtfmRuntimeOptions {
   /** Shiki theme to use (must match a loaded theme). */
@@ -16,8 +22,11 @@ export interface WtfmRuntimeOptions {
    */
   strings?: Map<string, string>;
 
-  /** Shiki language registrations to load. */
-  langs: LanguageRegistration[][];
+  /**
+   * Shiki language registrations to load. Defaults to HTML,
+   * JavaScript, and XML when omitted.
+   */
+  langs?: LanguageRegistration[][];
 
   /** Shiki theme registrations to load. */
   themes: ThemeRegistrationAny[];
@@ -125,7 +134,7 @@ export async function initWtfmRuntime(
   const {
     highlightTheme,
     strings = new Map(),
-    langs,
+    langs = defaultLangs,
     themes,
   } = options;
 

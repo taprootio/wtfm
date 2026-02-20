@@ -169,6 +169,14 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
   const markdownLib = markdownIt(mdOptions).use(mathjax3);
   eleventyConfig.setLibrary("md", markdownLib);
 
+  // ── Markdown filter for JS templates ────────────────────────
+  // Allows `.11ty.js` templates to render markdown through the
+  // same shared markdown-it instance registered above:
+  //   return this.renderMarkdown(someMarkdownString);
+  eleventyConfig.addShortcode("renderMarkdown", function (content) {
+    return markdownLib.render(content ?? "");
+  });
+
   // ── Asset filter ─────────────────────────────────────────────
   eleventyConfig.addFilter("asset", function (value) {
     const manifest = this.data.manifest;

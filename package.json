@@ -58,7 +58,7 @@
   ],
   "scripts": {
     "build": "npm run build:server && npm run build:client",
-    "build:server": "mkdir -p dist && cp -r src/server dist/server",
+    "build:server": "mkdir -p dist && rm -rf dist/server && cp -r src/server dist/server",
     "build:client": "tsc --project tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -73,12 +73,12 @@
   "dependencies": {
     "markdown-it": "^14.1.0",
     "markdown-it-mathjax3": "^5.2.0",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "shiki": "^3.13.0"
   },
   "peerDependencies": {
     "@taprootio/taproot-controls": ">=1.107.0",
-    "lit": "^3.0.0",
-    "shiki": "^3.0.0"
+    "lit": "^3.0.0"
   },
   "peerDependenciesMeta": {
     "@taprootio/taproot-controls": {
@@ -86,14 +86,10 @@
     },
     "lit": {
       "optional": true
-    },
-    "shiki": {
-      "optional": true
     }
   },
   "devDependencies": {
     "lit": "^3.2.1",
-    "shiki": "^3.13.0",
     "typescript": "~5.7.2",
     "vitest": "^4.0.18"
   },
