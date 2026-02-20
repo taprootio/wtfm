@@ -1,0 +1,66 @@
+name: Release
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "package.json"
+      - "CHANGELOG.md"
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      skipped: ${{ steps.changelog.outputs.skipped }}
+      version: ${{ steps.changelog.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bump version
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v6.2.0
+        with:
+          preset: "conventionalcommits"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: https://npm.pkg.github.com
+          scope: "@taprootio"
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm test
+
+  publish:
+    needs: [version, test]
+    if: ${{ needs.version.outputs.skipped == 'false' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: https://npm.pkg.github.com
+          scope: "@taprootio"
+      - name: Build
+        run: |
+          npm version ${{ needs.version.outputs.version }} --no-git-tag-version --no-commit-hooks --allow-same-version
+          npm ci
+          npm run build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
