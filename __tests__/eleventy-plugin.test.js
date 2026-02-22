@@ -143,6 +143,39 @@ describe("wtfmPlugin", () => {
       expect(result).toContain("### label");
     });
 
+    it("finds a component class that is not the first declaration in its module", async () => {
+      const multiDeclCem = {
+        modules: [
+          {
+            declarations: [
+              {
+                name: "resetCache",
+                kind: "function",
+                description: "Resets the cache.",
+              },
+              {
+                name: "TestWidget",
+                tagName: "test-widget",
+                description: "A widget for testing.",
+                attributes: [],
+                members: [],
+                events: [],
+                slots: [],
+                cssParts: [],
+                cssProperties: [],
+              },
+            ],
+          },
+        ],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(multiDeclCem));
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+      const result = await config.shortcodes.renderDocs("TestWidget");
+      expect(result).toContain("<test-widget>");
+      expect(result).toContain("A widget for testing.");
+    });
+
     it("base64-encodes ```html code blocks in descriptions to prevent markdown corruption", async () => {
       const cemWithCode = {
         modules: [

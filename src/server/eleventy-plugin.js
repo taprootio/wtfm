@@ -200,9 +200,11 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
 
   // ── renderDocs shortcode ─────────────────────────────────────
   eleventyConfig.addShortcode("renderDocs", async function (elementName) {
-    const elemDocs = customElements.modules.find(
-      (m) => m.declarations[0]?.name === elementName,
-    )?.declarations[0];
+    let elemDocs;
+    for (const mod of customElements.modules) {
+      elemDocs = mod.declarations?.find((d) => d.name === elementName);
+      if (elemDocs) break;
+    }
 
     if (!elemDocs) {
       console.warn("wtfm: No CEM entry found for", elementName);

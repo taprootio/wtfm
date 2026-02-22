@@ -82,7 +82,7 @@ export default function createComponentsData(options = {}) {
     // First pass: collect all components with @docUrl
     const raw = [];
     for (const mod of cem.modules) {
-      const decl = mod.declarations?.[0];
+      const decl = mod.declarations?.find((d) => d.docUrl);
       const url = tagValue(decl?.docUrl);
       if (!url) continue;
 

@@ -57,6 +57,26 @@ const fakeCem = {
         },
       ],
     },
+    {
+      // Component class is NOT the first declaration (e.g. helper
+      // function exported before the class).
+      declarations: [
+        {
+          name: "resetCache",
+          kind: "function",
+          description: "Resets the font cache.",
+        },
+        {
+          name: "EspFontPicker",
+          tagName: "esp-font-picker",
+          description: "A font picker component.",
+          docUrl: { name: "/components/font-picker" },
+          menuLabel: { name: "Font", description: "Picker" },
+          menuIcon: { name: "typography" },
+          docPageTitle: { name: "Font", description: "Picker" },
+        },
+      ],
+    },
   ],
 };
 
@@ -97,11 +117,12 @@ describe("createComponentsData", () => {
     readFileSync.mockReturnValue(JSON.stringify(fakeCem));
     const fn = createComponentsData({ cemPath: "/fake.json" });
     const result = fn();
-    expect(result.length).toBe(3);
+    expect(result.length).toBe(4);
     const tagNames = result.map((c) => c.tagName);
     expect(tagNames).toContain("esp-button");
     expect(tagNames).toContain("esp-checkbox");
     expect(tagNames).toContain("esp-checkbox-group");
+    expect(tagNames).toContain("esp-font-picker");
   });
 
   it("combines split tag values for URL", () => {
@@ -130,6 +151,18 @@ describe("createComponentsData", () => {
     const urls = result.map((c) => c.url);
     const sorted = [...urls].sort();
     expect(urls).toEqual(sorted);
+  });
+
+  it("finds the component class even when it is not the first declaration", () => {
+    readFileSync.mockReturnValue(JSON.stringify(fakeCem));
+    const fn = createComponentsData({ cemPath: "/fake.json" });
+    const result = fn();
+    const fontPicker = result.find((c) => c.tagName === "esp-font-picker");
+    expect(fontPicker).toBeDefined();
+    expect(fontPicker.className).toBe("EspFontPicker");
+    expect(fontPicker.url).toBe("/components/font-picker");
+    expect(fontPicker.menuLabel).toBe("Font Picker");
+    expect(fontPicker.pageTitle).toBe("Font Picker");
   });
 
   it("builds breadcrumbs with Components root", () => {
