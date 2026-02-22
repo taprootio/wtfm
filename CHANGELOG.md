@@ -1,3 +1,10 @@
+## [0.3.1](https://github.com/taprootio/wtfm/compare/v0.3.0...v0.3.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* how we find component declarations ([bde2f4e](https://github.com/taprootio/wtfm/commit/bde2f4e369d1b2304ee3e703b5414241842570b3))
+
 ## [0.3.0](https://github.com/taprootio/wtfm/compare/v0.2.4...v0.3.0) (2026-02-20)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * build ([d886b0c](https://github.com/taprootio/wtfm/commit/d886b0c90ae85a35782a2086cd66457627e35aea))
-
-## [0.2.1](https://github.com/taprootio/wtfm/compare/v0.2.0...v0.2.1) (2026-02-20)
-
-
-### Bug Fixes
-
-* taproot-controls ref ([18397f6](https://github.com/taprootio/wtfm/commit/18397f6b038a746b30a1e6c09f57cb8564990469))
 
