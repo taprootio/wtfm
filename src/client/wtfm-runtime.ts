@@ -1,6 +1,7 @@
 import { createHighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import type { HighlighterCore, ThemeRegistrationAny, LanguageRegistration } from "shiki";
+import bash from "@shikijs/langs/bash";
 import html from "@shikijs/langs/html";
 import javascript from "@shikijs/langs/javascript";
 import xml from "@shikijs/langs/xml";
@@ -8,8 +9,8 @@ import { setHighlighter } from "./wtfm-highlighter.js";
 
 // ── Types ──────────────────────────────────────────────────────
 
-/** Built-in language registrations (HTML, JavaScript, XML). */
-const defaultLangs: LanguageRegistration[][] = [html, javascript, xml];
+/** Built-in language registrations (Bash, HTML, JavaScript, XML). */
+const defaultLangs: LanguageRegistration[][] = [bash, html, javascript, xml];
 
 export interface WtfmRuntimeOptions {
   /** Shiki theme to use (must match a loaded theme). */
@@ -23,8 +24,8 @@ export interface WtfmRuntimeOptions {
   strings?: Map<string, string>;
 
   /**
-   * Shiki language registrations to load. Defaults to HTML,
-   * JavaScript, and XML when omitted.
+   * Shiki language registrations to load. Defaults to Bash,
+   * HTML, JavaScript, and XML when omitted.
    */
   langs?: LanguageRegistration[][];
 
@@ -106,7 +107,7 @@ async function replacePreWithFormatted(
   pre: HTMLPreElement,
   code: string,
   theme: string,
-  lang: "html" | "js" | "xml",
+  lang: "bash" | "html" | "js" | "xml",
 ) {
   pre.replaceWith(
     window.htmlToNode(
@@ -153,6 +154,27 @@ export async function initWtfmRuntime(
   setHighlighter(highlighter, highlightTheme);
 
   const promises: Array<Promise<void>> = [];
+
+  // ── Bash code blocks ───────────────────────────────────────
+  for (const bashCode of [
+    ...document.getElementsByClassName("language-bash"),
+  ]) {
+    const thePre = bashCode.closest("pre");
+    if (!thePre) {
+      console.log("No pre...");
+      return;
+    }
+
+    promises.push(
+      replacePreWithFormatted(
+        highlighter,
+        thePre,
+        unescapeHTML(bashCode.innerHTML),
+        highlightTheme,
+        "bash",
+      ),
+    );
+  }
 
   // ── JS code blocks ─────────────────────────────────────────
   for (const jsCode of [...document.getElementsByClassName("language-js")]) {
