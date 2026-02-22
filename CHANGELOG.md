@@ -1,3 +1,10 @@
+## [0.4.0](https://github.com/taprootio/wtfm/compare/v0.3.1...v0.4.0) (2026-02-22)
+
+
+### Features
+
+* add bash to default code highlighting ([850ffad](https://github.com/taprootio/wtfm/commit/850ffad7ddbd468ddfe93e044cc82929d28f1ecb))
+
 ## [0.3.1](https://github.com/taprootio/wtfm/compare/v0.3.0...v0.3.1) (2026-02-22)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * taproot-controls ref ([d8e841e](https://github.com/taprootio/wtfm/commit/d8e841e22598ba6348c2afecf64340f060975a76))
-
-## [0.2.2](https://github.com/taprootio/wtfm/compare/v0.2.1...v0.2.2) (2026-02-20)
-
-
-### Bug Fixes
-
-* build ([d886b0c](https://github.com/taprootio/wtfm/commit/d886b0c90ae85a35782a2086cd66457627e35aea))
 
