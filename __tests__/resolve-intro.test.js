@@ -45,4 +45,33 @@ describe("resolveIntro", () => {
     const result = resolveIntro("No placeholder here.", "my-el", 5);
     expect(result).toBe("No placeholder here.");
   });
+
+  it("interpolates {name} in a string template", () => {
+    const result = resolveIntro(
+      "`{name}` has the following properties:",
+      "SchemeEvents",
+      2,
+    );
+    expect(result).toBe(
+      "`SchemeEvents` has the following properties:",
+    );
+  });
+
+  it("passes name alongside tagName in function form", () => {
+    const intro = ({ name, tagName, count }) => {
+      expect(name).toBe(tagName);
+      return `${name} has ${count} items.`;
+    };
+    const result = resolveIntro(intro, "EspBus", 3);
+    expect(result).toBe("EspBus has 3 items.");
+  });
+
+  it("handles templates with both {tagName} and {name} placeholders", () => {
+    const result = resolveIntro(
+      "{name} (aka {tagName})",
+      "MyType",
+      1,
+    );
+    expect(result).toBe("MyType (aka MyType)");
+  });
 });

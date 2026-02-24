@@ -34,6 +34,75 @@ const fakeCem = {
   ],
 };
 
+/** Minimal type manifest with one interface and one function. */
+const fakeTypeManifest = {
+  modules: [
+    {
+      path: "src/shared/bus-events.ts",
+      declarations: [
+        {
+          kind: "interface",
+          name: "SchemeEvents",
+          description: "Theme coordination events.",
+          members: [
+            {
+              kind: "field",
+              name: "seed-color-changed",
+              type: { text: "{ seedColor: string; correlationId: string }" },
+              description: "Fired when the effective seed color changes.",
+              privacy: "public",
+            },
+          ],
+          docUrl: { name: "/api/scheme-events" },
+        },
+        {
+          kind: "type-alias",
+          name: "EspBusEventMap",
+          description: "Every event published on the singleton EspBus.",
+          type: {
+            text: "SchemeEvents & ToastEvents & PopoverEvents",
+          },
+          docUrl: { name: "/api/esp-bus-event-map" },
+        },
+        {
+          kind: "function",
+          name: "getEspBus",
+          description: "Typed accessor for the singleton bus.",
+          typeParameters: [
+            {
+              name: "T",
+              constraint: "EspBusEventMap",
+              default: "EspBusEventMap",
+            },
+          ],
+          parameters: [],
+          return: {
+            type: { text: "EspBus<T>" },
+            description: "Pre-typed bus instance.",
+          },
+          docUrl: { name: "/api/get-esp-bus" },
+        },
+        {
+          kind: "variable",
+          name: "ESP_EVENTS",
+          description: "Canonical event name strings.",
+          type: { text: '{ readonly VALUE_CHANGED: "value-changed" }' },
+          members: [
+            {
+              kind: "field",
+              name: "VALUE_CHANGED",
+              type: { text: '"value-changed"' },
+              description: "",
+              privacy: "public",
+            },
+          ],
+          docUrl: { name: "/api/esp-events" },
+        },
+      ],
+    },
+  ],
+};
+
 /**
  * Creates a mock Eleventy config object that records registrations.
  */
@@ -459,6 +528,108 @@ describe("wtfmPlugin", () => {
       const result = await config.shortcodes.renderDocs("LimitedWidget");
       expect(result).toContain("## Attributes");
       expect(result).not.toContain("## Methods");
+    });
+  });
+
+  describe("type manifest support", () => {
+    function setupWithTypeManifest() {
+      readFileSync.mockImplementation((path) => {
+        if (path === "/fake/cem.json") return JSON.stringify(fakeCem);
+        if (path === "/fake/types.json")
+          return JSON.stringify(fakeTypeManifest);
+        throw new Error("ENOENT");
+      });
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, {
+        cemPath: "/fake/cem.json",
+        typeManifestPath: "/fake/types.json",
+      });
+      return config;
+    }
+
+    it("adds typeManifest as global data when typeManifestPath is provided", () => {
+      const config = setupWithTypeManifest();
+      expect(config.globalData.typeManifest).toEqual(fakeTypeManifest);
+    });
+
+    it("does not add typeManifest global data when no typeManifestPath", () => {
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+      expect(config.globalData.typeManifest).toBeUndefined();
+    });
+
+    it("handles missing type manifest file gracefully", () => {
+      readFileSync.mockImplementation((path) => {
+        if (path === "/fake/cem.json") return JSON.stringify(fakeCem);
+        throw new Error("ENOENT");
+      });
+      const config = createMockEleventyConfig();
+      expect(() =>
+        wtfmPlugin(config, {
+          cemPath: "/fake/cem.json",
+          typeManifestPath: "/missing/types.json",
+        }),
+      ).not.toThrow();
+    });
+
+    it("renders interface declaration from type manifest", async () => {
+      const config = setupWithTypeManifest();
+      const result = await config.shortcodes.renderDocs("SchemeEvents");
+      expect(result).toContain("`SchemeEvents`");
+      expect(result).toContain("Theme coordination events.");
+      // Should NOT have a tag-name header
+      expect(result).not.toContain("<SchemeEvents>");
+    });
+
+    it("renders properties section for interface declarations", async () => {
+      const config = setupWithTypeManifest();
+      const result = await config.shortcodes.renderDocs("SchemeEvents");
+      expect(result).toContain("## Properties");
+      expect(result).toContain("### seed-color-changed");
+    });
+
+    it("renders type alias with type expression code block", async () => {
+      const config = setupWithTypeManifest();
+      const result = await config.shortcodes.renderDocs("EspBusEventMap");
+      expect(result).toContain("`EspBusEventMap`");
+      expect(result).toContain("Every event published on the singleton EspBus.");
+      expect(result).toContain("```ts");
+      expect(result).toContain(
+        "type EspBusEventMap = SchemeEvents & ToastEvents & PopoverEvents",
+      );
+    });
+
+    it("renders function declaration with signature", async () => {
+      const config = setupWithTypeManifest();
+      const result = await config.shortcodes.renderDocs("getEspBus");
+      // Should contain the full function signature
+      expect(result).toContain("getEspBus");
+      expect(result).toContain("EspBus<T>");
+      expect(result).toContain("Typed accessor for the singleton bus.");
+    });
+
+    it("renders function return type description", async () => {
+      const config = setupWithTypeManifest();
+      const result = await config.shortcodes.renderDocs("getEspBus");
+      expect(result).toContain("**Returns**");
+      expect(result).toContain("`EspBus<T>`");
+      expect(result).toContain("Pre-typed bus instance.");
+    });
+
+    it("renders variable declaration with properties section", async () => {
+      const config = setupWithTypeManifest();
+      const result = await config.shortcodes.renderDocs("ESP_EVENTS");
+      expect(result).toContain("`ESP_EVENTS`");
+      expect(result).toContain("## Properties");
+      expect(result).toContain("### VALUE_CHANGED");
+    });
+
+    it("prefers CEM declaration over type manifest for same name", async () => {
+      // If a name exists in both, CEM wins
+      const config = setupWithTypeManifest();
+      const result = await config.shortcodes.renderDocs("TestWidget");
+      // Should render as component (from CEM), not as a type
+      expect(result).toContain("<test-widget>");
     });
   });
 });

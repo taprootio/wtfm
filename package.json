@@ -12,6 +12,10 @@
       "types": "./dist/server/eleventy-plugin.d.ts",
       "default": "./dist/server/eleventy-plugin.js"
     },
+    "./type-extractor": {
+      "types": "./dist/server/type-extractor.d.ts",
+      "default": "./dist/server/type-extractor.js"
+    },
     "./renderers": {
       "types": "./dist/server/section-renderers/index.d.ts",
       "default": "./dist/server/section-renderers/index.js"
@@ -23,6 +27,10 @@
     "./data/components": {
       "types": "./dist/server/data/components.d.ts",
       "default": "./dist/server/data/components.js"
+    },
+    "./data/types": {
+      "types": "./dist/server/data/types.d.ts",
+      "default": "./dist/server/data/types.js"
     },
     "./data/manifest": {
       "types": "./dist/server/data/manifest.d.ts",
@@ -78,13 +86,17 @@
   },
   "peerDependencies": {
     "@taprootio/taproot-controls": ">=1.107.0",
-    "lit": "^3.0.0"
+    "lit": "^3.0.0",
+    "typescript": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "@taprootio/taproot-controls": {
       "optional": true
     },
     "lit": {
+      "optional": true
+    },
+    "typescript": {
       "optional": true
     }
   },
