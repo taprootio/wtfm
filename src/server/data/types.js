@@ -103,6 +103,7 @@ export default function createTypeDocsData(options = {}) {
           url,
           menuLabel: tagValue(decl.menuLabel),
           menuIcon: tagValue(decl.menuIcon),
+          menuGroup: tagValue(decl.menuGroup),
           pageTitle:
             tagValue(decl.docPageTitle) ||
             tagValue(decl.menuLabel) ||

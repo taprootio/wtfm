@@ -92,6 +92,7 @@ export default function createComponentsData(options = {}) {
         url,
         menuLabel: tagValue(decl.menuLabel),
         menuIcon: tagValue(decl.menuIcon),
+        menuGroup: tagValue(decl.menuGroup),
         pageTitle: tagValue(decl.docPageTitle) || tagValue(decl.menuLabel) || decl.tagName,
         metaDescription: firstSentence(decl.description),
       });
