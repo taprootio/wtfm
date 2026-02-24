@@ -1,3 +1,10 @@
+## [0.6.0](https://github.com/taprootio/wtfm/compare/v0.5.0...v0.6.0) (2026-02-24)
+
+
+### Features
+
+* allow menu depth ([259b7ba](https://github.com/taprootio/wtfm/commit/259b7ba101ac218b020d0fc844e7746c2f1960a8))
+
 ## [0.5.0](https://github.com/taprootio/wtfm/compare/v0.4.0...v0.5.0) (2026-02-24)
 
 
@@ -25,11 +32,4 @@
 ### Features
 
 * make shiki and prettier hard dependencies ([6cd7f3a](https://github.com/taprootio/wtfm/commit/6cd7f3a312fe8d8e2140a1f15b76ce4a35b4dbb6))
-
-## [0.2.4](https://github.com/taprootio/wtfm/compare/v0.2.3...v0.2.4) (2026-02-20)
-
-
-### Bug Fixes
-
-* build ([f15f9cb](https://github.com/taprootio/wtfm/commit/f15f9cb01a5a7bd2e87c3cf9cb35621f3eee7973))
 
