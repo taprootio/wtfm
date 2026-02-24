@@ -392,7 +392,7 @@ export function extractTypes(options = {}) {
   const {
     tsConfigPath = "tsconfig.json",
     outFile = "type-manifest.json",
-    tags = ["docUrl", "menuLabel", "menuIcon", "docPageTitle", "docSections"],
+    tags = ["docUrl", "menuLabel", "menuIcon", "menuGroup", "docPageTitle", "docSections"],
   } = options;
 
   const configPath = resolve(tsConfigPath);
