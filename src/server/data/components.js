@@ -93,13 +93,20 @@ export default function createComponentsData(options = {}) {
         menuLabel: tagValue(decl.menuLabel),
         menuIcon: tagValue(decl.menuIcon),
         menuGroup: tagValue(decl.menuGroup),
+        menuOrder: parseFloat(tagValue(decl.menuOrder)) || undefined,
         pageTitle: tagValue(decl.docPageTitle) || tagValue(decl.menuLabel) || decl.tagName,
         metaDescription: firstSentence(decl.description),
       });
     }
 
-    // Sort alphabetically by URL for stable ordering
-    raw.sort((a, b) => a.url.localeCompare(b.url));
+    // Sort by explicit menuOrder first, then alphabetically by URL.
+    // Items with a menuOrder appear before items without one.
+    raw.sort((a, b) => {
+      const oa = a.menuOrder ?? Infinity;
+      const ob = b.menuOrder ?? Infinity;
+      if (oa !== ob) return oa - ob;
+      return a.url.localeCompare(b.url);
+    });
 
     // Second pass: build breadcrumbs (needs the full list for parent lookups)
     for (const comp of raw) {
