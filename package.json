@@ -59,6 +59,9 @@
     "./client/oklch": {
       "types": "./dist/client/oklch-to-hex.d.ts",
       "default": "./dist/client/oklch-to-hex.js"
+    },
+    "./cem-plugin": {
+      "default": "./dist/server/cem-plugin.js"
     }
   },
   "files": [
