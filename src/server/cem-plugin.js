@@ -11,6 +11,7 @@ const DEFAULT_TAGS = [
   "menuLabel",
   "menuIcon",
   "menuGroup",
+  "menuOrder",
   "docPageTitle",
   "docSections",
 ];

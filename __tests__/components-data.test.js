@@ -144,13 +144,117 @@ describe("createComponentsData", () => {
     );
   });
 
-  it("sorts results alphabetically by URL", () => {
+  it("sorts results alphabetically by URL when no menuOrder is set", () => {
     readFileSync.mockReturnValue(JSON.stringify(fakeCem));
     const fn = createComponentsData({ cemPath: "/fake.json" });
     const result = fn();
     const urls = result.map((c) => c.url);
     const sorted = [...urls].sort();
     expect(urls).toEqual(sorted);
+  });
+
+  it("sorts items with menuOrder before items without, then by URL", () => {
+    const orderedCem = {
+      modules: [
+        {
+          declarations: [
+            {
+              name: "EspZebra",
+              tagName: "esp-zebra",
+              docUrl: { name: "/components/zebra" },
+              menuLabel: { name: "Zebra" },
+              docPageTitle: { name: "Zebra" },
+              menuOrder: { name: "2" },
+            },
+          ],
+        },
+        {
+          declarations: [
+            {
+              name: "EspAlpha",
+              tagName: "esp-alpha",
+              docUrl: { name: "/components/alpha" },
+              menuLabel: { name: "Alpha" },
+              docPageTitle: { name: "Alpha" },
+              // No menuOrder — should come after ordered items
+            },
+          ],
+        },
+        {
+          declarations: [
+            {
+              name: "EspFirst",
+              tagName: "esp-first",
+              docUrl: { name: "/components/first" },
+              menuLabel: { name: "First" },
+              docPageTitle: { name: "First" },
+              menuOrder: { name: "1" },
+            },
+          ],
+        },
+        {
+          declarations: [
+            {
+              name: "EspBeta",
+              tagName: "esp-beta",
+              docUrl: { name: "/components/beta" },
+              menuLabel: { name: "Beta" },
+              docPageTitle: { name: "Beta" },
+              // No menuOrder
+            },
+          ],
+        },
+      ],
+    };
+    readFileSync.mockReturnValue(JSON.stringify(orderedCem));
+    const fn = createComponentsData({ cemPath: "/fake.json" });
+    const result = fn();
+    const tagNames = result.map((c) => c.tagName);
+
+    // Ordered items first (by menuOrder), then unordered (by URL)
+    expect(tagNames).toEqual([
+      "esp-first",   // menuOrder 1
+      "esp-zebra",   // menuOrder 2
+      "esp-alpha",   // no order, URL /components/alpha
+      "esp-beta",    // no order, URL /components/beta
+    ]);
+  });
+
+  it("exposes menuOrder as a number on the component object", () => {
+    const cem = {
+      modules: [
+        {
+          declarations: [
+            {
+              name: "EspOrdered",
+              tagName: "esp-ordered",
+              docUrl: { name: "/components/ordered" },
+              docPageTitle: { name: "Ordered" },
+              menuOrder: { name: "5" },
+            },
+          ],
+        },
+        {
+          declarations: [
+            {
+              name: "EspUnordered",
+              tagName: "esp-unordered",
+              docUrl: { name: "/components/unordered" },
+              docPageTitle: { name: "Unordered" },
+            },
+          ],
+        },
+      ],
+    };
+    readFileSync.mockReturnValue(JSON.stringify(cem));
+    const fn = createComponentsData({ cemPath: "/fake.json" });
+    const result = fn();
+
+    const ordered = result.find((c) => c.tagName === "esp-ordered");
+    expect(ordered.menuOrder).toBe(5);
+
+    const unordered = result.find((c) => c.tagName === "esp-unordered");
+    expect(unordered.menuOrder).toBeUndefined();
   });
 
   it("finds the component class even when it is not the first declaration", () => {

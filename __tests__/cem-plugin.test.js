@@ -241,6 +241,48 @@ export class EspalierVerticalMenu extends LitElement {}
     });
   });
 
+  it("recovers menuOrder tag from source", () => {
+    const source = `
+/**
+ * An ordered component.
+ *
+ * @docPageTitle Ordered
+ * @docUrl /components/ordered
+ * @menuGroup Layout
+ * @menuOrder 3
+ */
+interface Blocker {}
+
+@customElement("esp-ordered")
+export class EspOrdered extends LitElement {}
+`;
+    readFileSync.mockReturnValue(source);
+
+    const manifest = {
+      modules: [
+        {
+          path: "src/ordered/esp-ordered.ts",
+          declarations: [
+            {
+              name: "EspOrdered",
+              tagName: "esp-ordered",
+              customElement: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    const decl = manifest.modules[0].declarations[0];
+    expect(decl.menuOrder).toEqual({
+      name: "3",
+      description: "",
+    });
+  });
+
   it("does not modify declarations that already have tags", () => {
     const manifest = {
       modules: [
