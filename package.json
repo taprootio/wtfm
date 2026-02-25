@@ -62,6 +62,9 @@
     },
     "./cem-plugin": {
       "default": "./dist/server/cem-plugin.js"
+    },
+    "./validate-manifest": {
+      "default": "./dist/server/validate-manifest.js"
     }
   },
   "files": [
