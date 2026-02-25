@@ -1,3 +1,10 @@
+## [0.7.0](https://github.com/taprootio/wtfm/compare/v0.6.1...v0.7.0) (2026-02-25)
+
+
+### Features
+
+* menu items can have a sort order ([59594c9](https://github.com/taprootio/wtfm/commit/59594c9ffb17bd83aad79b8d9198cd32337d0efa))
+
 ## [0.6.1](https://github.com/taprootio/wtfm/compare/v0.6.0...v0.6.1) (2026-02-25)
 
 
@@ -25,11 +32,4 @@
 ### Features
 
 * add bash to default code highlighting ([850ffad](https://github.com/taprootio/wtfm/commit/850ffad7ddbd468ddfe93e044cc82929d28f1ecb))
-
-## [0.3.1](https://github.com/taprootio/wtfm/compare/v0.3.0...v0.3.1) (2026-02-22)
-
-
-### Bug Fixes
-
-* how we find component declarations ([bde2f4e](https://github.com/taprootio/wtfm/commit/bde2f4e369d1b2304ee3e703b5414241842570b3))
 
