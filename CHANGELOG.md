@@ -1,3 +1,10 @@
+## [0.6.1](https://github.com/taprootio/wtfm/compare/v0.6.0...v0.6.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* more resilient to various JSDoc/code structures ([57150ef](https://github.com/taprootio/wtfm/commit/57150ef4156342f17f236f81e724424dacdd261e))
+
 ## [0.6.0](https://github.com/taprootio/wtfm/compare/v0.5.0...v0.6.0) (2026-02-24)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * how we find component declarations ([bde2f4e](https://github.com/taprootio/wtfm/commit/bde2f4e369d1b2304ee3e703b5414241842570b3))
-
-## [0.3.0](https://github.com/taprootio/wtfm/compare/v0.2.4...v0.3.0) (2026-02-20)
-
-
-### Features
-
-* make shiki and prettier hard dependencies ([6cd7f3a](https://github.com/taprootio/wtfm/commit/6cd7f3a312fe8d8e2140a1f15b76ce4a35b4dbb6))
 
