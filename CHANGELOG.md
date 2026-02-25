@@ -1,3 +1,10 @@
+## [0.8.0](https://github.com/taprootio/wtfm/compare/v0.7.0...v0.8.0) (2026-02-25)
+
+
+### Features
+
+* manifest validation ([7695800](https://github.com/taprootio/wtfm/commit/769580011c948cac982e5a6813d5dc2e6b286d39))
+
 ## [0.7.0](https://github.com/taprootio/wtfm/compare/v0.6.1...v0.7.0) (2026-02-25)
 
 
@@ -25,11 +32,4 @@
 ### Features
 
 * allow documenting all types ([d14f5ef](https://github.com/taprootio/wtfm/commit/d14f5ef537e399dbea0d18950f4c4624ad7b4d3d))
-
-## [0.4.0](https://github.com/taprootio/wtfm/compare/v0.3.1...v0.4.0) (2026-02-22)
-
-
-### Features
-
-* add bash to default code highlighting ([850ffad](https://github.com/taprootio/wtfm/commit/850ffad7ddbd468ddfe93e044cc82929d28f1ecb))
 
