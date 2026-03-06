@@ -36,13 +36,11 @@
       "types": "./dist/server/data/manifest.d.ts",
       "default": "./dist/server/data/manifest.js"
     },
-    "./rollup/manifest": {
-      "types": "./dist/server/rollup/plugin-manifest.d.ts",
-      "default": "./dist/server/rollup/plugin-manifest.js"
+    "./bundler/manifest": {
+      "default": "./dist/server/bundler/plugin-manifest.js"
     },
-    "./rollup/copy-assets": {
-      "types": "./dist/server/rollup/plugin-copy-assets.d.ts",
-      "default": "./dist/server/rollup/plugin-copy-assets.js"
+    "./bundler/copy-assets": {
+      "default": "./dist/server/bundler/plugin-copy-assets.js"
     },
     "./client/runtime": {
       "types": "./dist/client/wtfm-runtime.d.ts",
