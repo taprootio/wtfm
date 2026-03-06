@@ -37,11 +37,9 @@
       "default": "./dist/server/data/manifest.js"
     },
     "./bundler/manifest": {
-      "types": "./dist/server/bundler/plugin-manifest.d.ts",
       "default": "./dist/server/bundler/plugin-manifest.js"
     },
     "./bundler/copy-assets": {
-      "types": "./dist/server/bundler/plugin-copy-assets.d.ts",
       "default": "./dist/server/bundler/plugin-copy-assets.js"
     },
     "./client/runtime": {
