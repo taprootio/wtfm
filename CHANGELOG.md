@@ -1,3 +1,10 @@
+## [0.11.0](https://github.com/taprootio/wtfm/compare/v0.8.0...v0.11.0) (2026-03-07)
+
+
+### Features
+
+* use rolldown instead of rollup ([80a1972](https://github.com/taprootio/wtfm/commit/80a1972b7b21c9dc2c9f5ddf025ebdc8d76e09f2))
+
 ## [0.8.0](https://github.com/taprootio/wtfm/compare/v0.7.0...v0.8.0) (2026-02-25)
 
 
@@ -25,11 +32,4 @@
 ### Features
 
 * allow menu depth ([259b7ba](https://github.com/taprootio/wtfm/commit/259b7ba101ac218b020d0fc844e7746c2f1960a8))
-
-## [0.5.0](https://github.com/taprootio/wtfm/compare/v0.4.0...v0.5.0) (2026-02-24)
-
-
-### Features
-
-* allow documenting all types ([d14f5ef](https://github.com/taprootio/wtfm/commit/d14f5ef537e399dbea0d18950f4c4624ad7b4d3d))
 
