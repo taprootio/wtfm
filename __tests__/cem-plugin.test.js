@@ -978,4 +978,54 @@ export class GammaEl extends LitElement {}
     expect(alphaResult).toHaveLength(1);
     expect(alphaResult[0].title).toBe("Alpha example");
   });
+
+  it("scopes by tagName when declName is not provided", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * @example Beta example
+ * \`\`\`html
+ * <beta-el></beta-el>
+ * \`\`\`
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    // Scope by tag name instead of class name
+    const alphaResult = extractExamples(source, undefined, "alpha-el");
+    expect(alphaResult).toHaveLength(1);
+    expect(alphaResult[0].title).toBe("Alpha example");
+
+    const betaResult = extractExamples(source, undefined, "beta-el");
+    expect(betaResult).toHaveLength(1);
+    expect(betaResult[0].title).toBe("Beta example");
+  });
+
+  it("returns empty when tagName decorator found but no adjacent JSDoc", () => {
+    const source = `
+/**
+ * @example Unrelated example
+ * \`\`\`html
+ * <other-el></other-el>
+ * \`\`\`
+ */
+@customElement("other-el")
+export class OtherEl extends LitElement {}
+
+const x = 42;
+
+@customElement("bare-el")
+export class BareEl extends LitElement {}
+`;
+    const result = extractExamples(source, undefined, "bare-el");
+    expect(result).toEqual([]);
+  });
 });

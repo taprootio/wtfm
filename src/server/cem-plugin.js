@@ -156,73 +156,100 @@ export function extractExamplesFromBlock(block) {
 }
 
 /**
+ * Find the last JSDoc block in `textBefore` that is directly adjacent
+ * to the anchor point. "Adjacent" means the gap between the JSDoc's
+ * closing `*​/` and the anchor contains only whitespace, decorator
+ * lines (starting with `@`), and `export`/`default` keywords.
+ *
+ * @param {string} textBefore  Source text preceding the anchor.
+ * @returns {string | null}  The adjacent JSDoc block, or null.
+ */
+function findAdjacentJsDoc(textBefore) {
+  const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
+  let lastBlock = null;
+  let lastBlockEnd = -1;
+  let blockMatch;
+
+  while ((blockMatch = jsdocPattern.exec(textBefore)) !== null) {
+    lastBlock = blockMatch[0];
+    lastBlockEnd = blockMatch.index + blockMatch[0].length;
+  }
+
+  if (!lastBlock || lastBlockEnd < 0) return null;
+
+  const gap = textBefore.slice(lastBlockEnd);
+  const gapLines = gap
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const isAdjacent = gapLines.every(
+    (line) =>
+      line.startsWith("@") ||
+      line === "export" ||
+      line === "default" ||
+      line === "export default",
+  );
+
+  return isAdjacent ? lastBlock : null;
+}
+
+/**
  * Extracts `@example` blocks from source text, scoped to a specific
- * declaration. Finds the JSDoc block that immediately precedes the
- * class declaration for the given name and extracts examples from it.
+ * declaration. Tries the following strategies in order:
  *
- * Falls back to scanning all JSDoc blocks only when `declName` is not
- * provided or the class is not found in the source. When the class is
- * found, only its directly adjacent JSDoc is checked (allowing only
- * whitespace, decorators, and export/default between the comment and
- * the class keyword) — this prevents misattribution.
+ * 1. **By class name** (`declName`): Finds `class DeclName` and checks
+ *    for a directly adjacent JSDoc block.
+ * 2. **By tag name** (`tagName`): Finds `@customElement("tagName")` and
+ *    checks for a directly adjacent JSDoc block. This handles cases
+ *    where `declName` is missing but the tag name is known.
+ * 3. **Global fallback**: Scans all JSDoc blocks and returns examples
+ *    from the first one that has any. Only used when neither `declName`
+ *    nor `tagName` is provided, or neither was found in the source.
  *
- * @param {string} source    Full source text of the file.
- * @param {string} declName  The class name to match (e.g. "TaprootHero").
+ * When a declaration is found (by either name or tag), only its own
+ * adjacent JSDoc is checked — this prevents misattribution.
+ *
+ * @param {string} source     Full source text of the file.
+ * @param {string} [declName] The class name to match (e.g. "TaprootHero").
+ * @param {string} [tagName]  The custom element tag name (e.g. "taproot-hero").
  * @returns {Array<{ title: string, body: string }>}
  */
-export function extractExamples(source, declName) {
-  // Strategy 1: Find the JSDoc block that is directly associated with
-  // `class DeclName`. The block must end immediately before the class,
-  // with only whitespace, decorators (@customElement(...) etc.), and
-  // export/default keywords allowed in between. This prevents grabbing
-  // a JSDoc block from a different declaration earlier in the file.
+export function extractExamples(source, declName, tagName) {
+  // Strategy 1: Find `class DeclName` and look for adjacent JSDoc.
   if (declName) {
     const escapedName = declName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const classPattern = new RegExp(`class\\s+${escapedName}\\b`);
     const classMatch = classPattern.exec(source);
 
     if (classMatch) {
-      // Look backwards from the class keyword for the nearest JSDoc block.
       const textBefore = source.slice(0, classMatch.index);
-      const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
-      let lastBlock = null;
-      let lastBlockEnd = -1;
-      let blockMatch;
-
-      while ((blockMatch = jsdocPattern.exec(textBefore)) !== null) {
-        lastBlock = blockMatch[0];
-        lastBlockEnd = blockMatch.index + blockMatch[0].length;
-      }
-
-      // Verify the JSDoc is directly adjacent: the gap between the
-      // end of the JSDoc and the class keyword must contain only
-      // whitespace, decorator lines (starting with @), and the
-      // keywords `export` / `default`. Any other content (variable
-      // declarations, function calls, other code) means the JSDoc
-      // belongs to something else.
-      if (lastBlock && lastBlockEnd >= 0) {
-        const gap = textBefore.slice(lastBlockEnd);
-        const gapLines = gap.split("\n").map((l) => l.trim()).filter(Boolean);
-        const isAdjacent = gapLines.every(
-          (line) =>
-            line.startsWith("@") ||
-            line === "export" ||
-            line === "default" ||
-            line === "export default",
-        );
-        if (isAdjacent) {
-          return extractExamplesFromBlock(lastBlock);
-        }
-      }
-
+      const block = findAdjacentJsDoc(textBefore);
+      if (block) return extractExamplesFromBlock(block);
       // Class found but no adjacent JSDoc — return empty.
       return [];
     }
   }
 
-  // Strategy 2: Fall back to scanning all JSDoc blocks and returning
-  // the first one that contains @example tags. Only used when declName
-  // is not provided or the class was not found in the source.
+  // Strategy 2: Find `@customElement("tagName")` and look for adjacent JSDoc.
+  if (tagName) {
+    const escapedTag = tagName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const decoratorPattern = new RegExp(
+      `@customElement\\(\\s*["']${escapedTag}["']\\s*\\)`,
+    );
+    const decoratorMatch = decoratorPattern.exec(source);
+
+    if (decoratorMatch) {
+      const textBefore = source.slice(0, decoratorMatch.index);
+      const block = findAdjacentJsDoc(textBefore);
+      if (block) return extractExamplesFromBlock(block);
+      // Decorator found but no adjacent JSDoc — return empty.
+      return [];
+    }
+  }
+
+  // Strategy 3: Fall back to scanning all JSDoc blocks and returning
+  // the first one that contains @example tags. Only used when neither
+  // declName nor tagName is provided or found in the source.
   const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
   let blockMatch;
 
@@ -368,7 +395,7 @@ export default function wtfmCemPlugin(options = {}) {
             if (cacheKey && examplesCache.has(cacheKey)) {
               examples = examplesCache.get(cacheKey);
             } else {
-              examples = extractExamples(source, decl.name);
+              examples = extractExamples(source, decl.name, decl.tagName);
               if (cacheKey) examplesCache.set(cacheKey, examples);
             }
 
