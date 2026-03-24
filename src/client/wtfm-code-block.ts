@@ -503,8 +503,9 @@ ${src}
           margin: 0;
           border-radius: var(--esp-size-border-radius, 4px);
           overflow-x: auto;
-          /* Override Shiki's inline background/color so the design
-             system tokens control all colors. */
+          /* Override Shiki's <pre> background and default text color so
+             the design system tokens define the container's base colors.
+             Token-level <span> colors from Shiki may still apply. */
           background-color: var(--esp-color-bg-2, #f5f5f5) !important;
           color: var(--esp-color-text, #333) !important;
         }
