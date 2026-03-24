@@ -109,9 +109,9 @@ describe("examplesRenderer", () => {
     expect(result).toBe("");
   });
 
-  // ── Description fallback ─────────────────────────────────────────
+  // ── No description fallback (avoids duplicate demos) ─────────────
 
-  it("falls back to first html code block in description", async () => {
+  it("does not fall back to description html blocks (handled by renderDocs)", async () => {
     const decl = {
       ...minimalDecl,
       tagName: "test-el",
@@ -120,18 +120,12 @@ describe("examplesRenderer", () => {
     };
 
     const result = await examplesRenderer.render(decl, {});
-
-    expect(result).toContain("## Examples");
-    expect(result).toContain("wtfm-code-block");
-    expect(result).toContain('tag-name="test-el"');
-
-    const sourceMatch = result.match(/source="([^"]+)"/);
-    expect(sourceMatch).toBeTruthy();
-    const decoded = Buffer.from(sourceMatch[1], "base64").toString("utf-8");
-    expect(decoded).toContain("fallback");
+    // Should return empty — description code blocks are rendered
+    // inline by renderDocs, not duplicated here.
+    expect(result).toBe("");
   });
 
-  it("returns empty string when description has no html code block", async () => {
+  it("returns empty string when no examples and no description", async () => {
     const decl = {
       ...minimalDecl,
       tagName: "test-el",

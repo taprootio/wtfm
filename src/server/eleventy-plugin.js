@@ -212,23 +212,29 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     cssprops: "css-properties",
     cssparts: "css-parts",
   };
-  for (const [alias, canonical] of Object.entries(KEY_ALIASES)) {
-    if (!rendererMap.has(alias) && rendererMap.has(canonical)) {
-      rendererMap.set(alias, rendererMap.get(canonical));
-    }
-  }
 
-  // Resolve the default section order (for component declarations).
-  // Canonicalize alias keys so exclusions (e.g. `-cssprops`) work
-  // against the defaults list — but only when the alias key isn't
-  // itself a registered renderer (a custom renderer registered under
-  // the alias name should be preserved).
+  // Resolve the default section order BEFORE adding built-in alias
+  // entries to rendererMap, so aliases in the sections option are
+  // canonicalized correctly. (If we added aliases first,
+  // rendererMap.has("cssprops") would be true, preventing
+  // canonicalization and breaking exclusion matching.)
+  //
+  // Custom renderers registered under an alias key are preserved —
+  // only keys that aren't already in rendererMap get canonicalized.
   const rawSectionOrder = sections
     ? sections.map((s) => (typeof s === "string" ? s : s.key))
     : defaultRenderers.map((r) => r.key);
   const defaultSectionOrder = rawSectionOrder.map((k) =>
     rendererMap.has(k) ? k : (KEY_ALIASES[k] ?? k),
   );
+
+  // Now add built-in alias entries so @docSections inclusions work
+  // with either the alias or canonical key.
+  for (const [alias, canonical] of Object.entries(KEY_ALIASES)) {
+    if (!rendererMap.has(alias) && rendererMap.has(canonical)) {
+      rendererMap.set(alias, rendererMap.get(canonical));
+    }
+  }
 
   // ── Load the Custom Elements Manifest ────────────────────────
   let customElements;

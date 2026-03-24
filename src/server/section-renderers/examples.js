@@ -11,10 +11,10 @@ import { buildCemContext } from "./build-cem-context.js";
  * a `title` (text after `@example`) and a `body` (content, typically
  * a fenced ```html code block).
  *
- * Falls back to extracting the first ```html block from the
- * component's description for backward compatibility with components
- * that embed examples directly in their description instead of using
- * `@example` tags.
+ * Only renders when `decl.examples` is present. Components that embed
+ * examples in their description (```html blocks) are already handled
+ * by `renderDocs`' description processing — duplicating them here
+ * would show the same demo twice.
  *
  * CEM metadata (attributes, events, slots) is serialised as a
  * `<script type="application/json">` child so the component can
@@ -26,15 +26,10 @@ export const examplesRenderer = {
   intro: "",
 
   async render(decl, options) {
+    if (!decl.examples?.length) return "";
+
     const cemContext = buildCemContext(decl, options);
-
-    // ── Try @example blocks first ───────────────────────────────
-    if (decl.examples?.length) {
-      return await renderExampleBlocks(decl.examples, decl.tagName, cemContext);
-    }
-
-    // ── Fallback: first ```html block from description ──────────
-    return await renderDescriptionFallback(decl, cemContext);
+    return await renderExampleBlocks(decl.examples, decl.tagName, cemContext);
   },
 };
 
@@ -66,32 +61,6 @@ async function renderExampleBlocks(examples, tagName, cemContext) {
   if (blocks.length === 0) return "";
 
   return `\n## ${examplesRenderer.heading}\n${blocks.join("\n")}`;
-}
-
-/**
- * Fallback: extract the first ```html block from the description.
- * This preserves backward compatibility with older components that
- * embed examples in the description rather than using @example tags.
- */
-async function renderDescriptionFallback(decl, cemContext) {
-  const desc = decl.description || "";
-  const htmlIndex = desc.indexOf("```html");
-  if (htmlIndex < 0) return "";
-
-  const codeBlockEnd = desc.indexOf("```", htmlIndex + 7);
-  if (codeBlockEnd < 0) return "";
-
-  const rawHtml = desc.substring(htmlIndex + 7, codeBlockEnd).trim();
-  const formatted = await formatHtml(rawHtml);
-  const encoded = Buffer.from(formatted).toString("base64");
-
-  return `
-## ${examplesRenderer.heading}
-
-<wtfm-code-block tag-name="${decl.tagName}" source="${encoded}">
-  <script type="application/json">${cemContext.cemJson}</script>
-</wtfm-code-block>
-`;
 }
 
 /**
