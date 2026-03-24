@@ -1,0 +1,77 @@
+name: Test and publish
+on:
+  push:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.PKG_READ_TOKEN }}
+
+      - name: Run tests
+        run: npm test
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if version is new
+        id: check
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          if git rev-parse "v$CURRENT" >/dev/null 2>&1; then
+            echo "Tag v$CURRENT already exists, skipping publish"
+          else
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "New version $CURRENT — will publish"
+          fi
+          echo "version=$CURRENT" >> $GITHUB_OUTPUT
+
+      - name: Set up Node.js
+        if: steps.check.outputs.should_publish == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          registry-url: https://npm.pkg.github.com
+          scope: "@taprootio"
+
+      - name: Build
+        if: steps.check.outputs.should_publish == 'true'
+        run: npm ci && npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.PKG_READ_TOKEN }}
+
+      - name: Create git tag
+        if: steps.check.outputs.should_publish == 'true'
+        run: |
+          git tag "v${{ steps.check.outputs.version }}"
+          git push origin "v${{ steps.check.outputs.version }}"
+
+      - name: Publish
+        if: steps.check.outputs.should_publish == 'true'
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
