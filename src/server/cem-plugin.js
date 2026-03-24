@@ -288,10 +288,14 @@ export function extractExamples(source, declName, tagName) {
  *
  * The plugin also extracts `@example` JSDoc blocks from source files
  * for all custom-element declarations (not just those missing tags).
- * Examples are scoped to the specific declaration — the plugin finds
- * the JSDoc block that precedes each class by name. This prevents
- * examples from being misattributed when a module contains multiple
- * custom-element declarations.
+ * Examples are scoped to the specific declaration using two strategies:
+ * first by matching `class DeclName`, then by matching the
+ * `@customElement("tagName")` decorator if the class name is missing.
+ * Only the JSDoc block directly adjacent to the anchor is used. A
+ * global fallback (first JSDoc with `@example`) is only used when
+ * neither anchor is found. This prevents examples from being
+ * misattributed when a module contains multiple custom-element
+ * declarations.
  *
  * Each `@example` block is parsed into a `{ title, body }` object
  * where `title` is the text on the `@example` line and `body` is

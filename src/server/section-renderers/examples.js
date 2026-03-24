@@ -29,14 +29,20 @@ export const examplesRenderer = {
     if (!decl.examples?.length) return "";
 
     const cemContext = buildCemContext(decl, options);
-    return await renderExampleBlocks(decl.examples, decl.tagName, cemContext);
+    return renderExampleBlocks(decl.examples, decl.tagName, this.heading, cemContext);
   },
 };
 
 /**
  * Render multiple @example blocks, each as a titled code block.
+ *
+ * @param {Array<{title: string, body: string}>} examples
+ * @param {string} tagName
+ * @param {string} heading  Section heading (from the renderer instance).
+ * @param {object} cemContext
+ * @returns {Promise<string>}
  */
-async function renderExampleBlocks(examples, tagName, cemContext) {
+async function renderExampleBlocks(examples, tagName, heading, cemContext) {
   const blocks = [];
 
   for (const example of examples) {
@@ -60,7 +66,7 @@ async function renderExampleBlocks(examples, tagName, cemContext) {
 
   if (blocks.length === 0) return "";
 
-  return `\n## ${examplesRenderer.heading}\n${blocks.join("\n")}`;
+  return `\n## ${heading}\n${blocks.join("\n")}`;
 }
 
 /**
