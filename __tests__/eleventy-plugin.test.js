@@ -529,6 +529,39 @@ describe("wtfmPlugin", () => {
       expect(result).toContain("## Attributes");
       expect(result).not.toContain("## Methods");
     });
+
+    it("resolves aliases in exclusions (e.g. -cssprops)", async () => {
+      const config = createMockEleventyConfig();
+      const cem = {
+        modules: [
+          {
+            declarations: [
+              {
+                name: "AliasWidget",
+                tagName: "alias-widget",
+                description: "Alias test.",
+                docSections: { name: "all,", description: "-cssprops" },
+                attributes: [
+                  { name: "a", description: "Attr.", default: '""' },
+                ],
+                members: [],
+                events: [],
+                slots: [],
+                cssParts: [],
+                cssProperties: [
+                  { name: "--my-color", description: "Color." },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(cem));
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+      const result = await config.shortcodes.renderDocs("AliasWidget");
+      expect(result).toContain("## Attributes");
+      expect(result).not.toContain("## CSS Properties");
+    });
   });
 
   describe("type manifest support", () => {

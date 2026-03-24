@@ -432,13 +432,17 @@ type ${decl.name} = ${decl.type.text}
     if (!docSections) {
       sectionKeys = kindDefaults;
     } else {
+      // Resolve aliases so abbreviations like "cssprops" work
+      // consistently in both inclusions and exclusions.
+      const resolveAlias = (key) => KEY_ALIASES[key] ?? key;
+
       const hasAll = docSections.includes("all");
       const exclusions = docSections
         .filter((s) => s.startsWith("-"))
-        .map((s) => s.substring(1));
-      const inclusions = docSections.filter(
-        (s) => s !== "all" && !s.startsWith("-"),
-      );
+        .map((s) => resolveAlias(s.substring(1)));
+      const inclusions = docSections
+        .filter((s) => s !== "all" && !s.startsWith("-"))
+        .map(resolveAlias);
 
       if (hasAll || inclusions.length === 0) {
         sectionKeys = kindDefaults.filter(
