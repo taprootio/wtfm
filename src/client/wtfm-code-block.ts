@@ -503,6 +503,10 @@ ${src}
           margin: 0;
           border-radius: var(--esp-size-border-radius, 4px);
           overflow-x: auto;
+          /* Override Shiki's inline background/color so the design
+             system tokens control all colors. */
+          background-color: var(--esp-color-bg-2) !important;
+          color: var(--esp-color-text) !important;
         }
       }
 
