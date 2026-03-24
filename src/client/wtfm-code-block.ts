@@ -118,9 +118,7 @@ export class WtfmCodeBlock extends EspalierElementBase {
   // ── Parsing ───────────────────────────────────────────────
 
   private parseCemData(): void {
-    const script = this.querySelector(
-      'script[type="application/json"]',
-    );
+    const script = this.querySelector('script[type="application/json"]');
     if (!script?.textContent) return;
     try {
       this.cemData = JSON.parse(script.textContent) as CemData;
@@ -190,10 +188,7 @@ export class WtfmCodeBlock extends EspalierElementBase {
         if (this.classifyAttrType(attr) === "boolean") {
           fresh.set(attr.name, this.demoElement.hasAttribute(attr.name));
         } else {
-          fresh.set(
-            attr.name,
-            this.demoElement.getAttribute(attr.name) ?? "",
-          );
+          fresh.set(attr.name, this.demoElement.getAttribute(attr.name) ?? "");
         }
       }
       this.attrValues = fresh;
@@ -221,9 +216,7 @@ export class WtfmCodeBlock extends EspalierElementBase {
           {
             name: ev.name,
             timestamp: new Date().toLocaleTimeString(),
-            detail: ce.detail
-              ? safeStringify(ce.detail)
-              : "—",
+            detail: ce.detail ? safeStringify(ce.detail) : "—",
           },
           ...this.eventLog,
         ];
@@ -308,25 +301,18 @@ ${src}
 
   // ── Attribute playground ──────────────────────────────────
 
-  private classifyAttrType(
-    attr: CemAttribute,
-  ): "boolean" | "enum" | "string" {
+  private classifyAttrType(attr: CemAttribute): "boolean" | "enum" | "string" {
     const t = (attr.type ?? "").trim();
     if (t === "boolean") return "boolean";
     // String-literal union:  "foo" | "bar"  or  'foo' | 'bar'
-    if (t.includes("|") && (t.includes('"') || t.includes("'")))
-      return "enum";
+    if (t.includes("|") && (t.includes('"') || t.includes("'"))) return "enum";
     return "string";
   }
 
   private parseEnumOptions(typeStr: string): string[] {
     return typeStr
       .split("|")
-      .map((s) =>
-        s
-          .trim()
-          .replace(/^["']|["']$/g, ""),
-      )
+      .map((s) => s.trim().replace(/^["']|["']$/g, ""))
       .filter(Boolean);
   }
 
@@ -379,10 +365,7 @@ ${src}
             <esp-pick-one
               @value-changed=${(e: CustomEvent) => {
                 const picked = e.detail;
-                this.handleAttrChange(
-                  attr.name,
-                  picked?.value ?? "",
-                );
+                this.handleAttrChange(attr.name, picked?.value ?? "");
               }}
             >
               ${options.map(
@@ -506,7 +489,7 @@ ${src}
           /* Override Shiki's <pre> background and default text color so
              the design system tokens define the container's base colors.
              Token-level <span> colors from Shiki may still apply. */
-          background-color: var(--esp-color-bg-2, #f5f5f5) !important;
+          background-color: var(--esp-color-layer-1, #f5f5f5) !important;
           color: var(--esp-color-text, #333) !important;
         }
       }
@@ -532,9 +515,7 @@ ${src}
 
       .copy-btn:hover,
       .clear-btn:hover {
-        background: oklch(
-          from var(--esp-color-layer-2) calc(l * 0.92) c h
-        );
+        background: oklch(from var(--esp-color-layer-2) calc(l * 0.92) c h);
       }
 
       :host([scheme="light"]) .copy-btn:hover,
