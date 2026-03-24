@@ -146,8 +146,8 @@ function buildFunctionSignature(decl) {
  * @param {(string|{key: string})[]} [options.sections] - Array of
  *   section keys (or objects with a `key` property) defining the
  *   default rendering order.  When omitted, the built-in order is
- *   used: `slots`, `attributes`, `methods`, `events`, `css-parts`,
- *   `css-properties`.
+ *   used: `examples`, `slots`, `attributes`, `methods`, `events`,
+ *   `css-parts`, `css-properties`.
  *
  *   Individual components can override this order via the
  *   `@docSections` JSDoc tag in their source:
@@ -206,10 +206,35 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     }
   }
 
-  // Resolve the default section order (for component declarations)
-  const defaultSectionOrder = sections
+  // Short aliases for commonly used section keys so @docSections
+  // can use either the full key or the abbreviation.
+  const KEY_ALIASES = {
+    cssprops: "css-properties",
+    cssparts: "css-parts",
+  };
+
+  // Resolve the default section order BEFORE adding built-in alias
+  // entries to rendererMap, so aliases in the sections option are
+  // canonicalized correctly. (If we added aliases first,
+  // rendererMap.has("cssprops") would be true, preventing
+  // canonicalization and breaking exclusion matching.)
+  //
+  // Custom renderers registered under an alias key are preserved —
+  // only keys that aren't already in rendererMap get canonicalized.
+  const rawSectionOrder = sections
     ? sections.map((s) => (typeof s === "string" ? s : s.key))
     : defaultRenderers.map((r) => r.key);
+  const defaultSectionOrder = rawSectionOrder.map((k) =>
+    rendererMap.has(k) ? k : (KEY_ALIASES[k] ?? k),
+  );
+
+  // Now add built-in alias entries so @docSections inclusions work
+  // with either the alias or canonical key.
+  for (const [alias, canonical] of Object.entries(KEY_ALIASES)) {
+    if (!rendererMap.has(alias) && rendererMap.has(canonical)) {
+      rendererMap.set(alias, rendererMap.get(canonical));
+    }
+  }
 
   // ── Load the Custom Elements Manifest ────────────────────────
   let customElements;
@@ -420,17 +445,36 @@ type ${decl.name} = ${decl.type.text}
     if (!docSections) {
       sectionKeys = kindDefaults;
     } else {
+      // Resolve aliases so abbreviations like "cssprops" work
+      // consistently. Inclusions only resolve when the key isn't
+      // already a registered renderer — so a custom renderer under
+      // the alias name is not bypassed. Exclusions include the raw
+      // key plus all related forms (alias → canonical and canonical
+      // → aliases) so filtering works regardless of which form
+      // kindDefaults uses.
+      const resolveKey = (key) =>
+        rendererMap.has(key) ? key : (KEY_ALIASES[key] ?? key);
+
       const hasAll = docSections.includes("all");
-      const exclusions = docSections
-        .filter((s) => s.startsWith("-"))
-        .map((s) => s.substring(1));
-      const inclusions = docSections.filter(
-        (s) => s !== "all" && !s.startsWith("-"),
-      );
+      const exclusionSet = new Set();
+      for (const s of docSections) {
+        if (!s.startsWith("-")) continue;
+        const raw = s.substring(1);
+        exclusionSet.add(raw);
+        // alias → canonical (e.g. cssprops → css-properties)
+        if (KEY_ALIASES[raw]) exclusionSet.add(KEY_ALIASES[raw]);
+        // canonical → aliases (e.g. css-properties → cssprops)
+        for (const [alias, canonical] of Object.entries(KEY_ALIASES)) {
+          if (canonical === raw) exclusionSet.add(alias);
+        }
+      }
+      const inclusions = docSections
+        .filter((s) => s !== "all" && !s.startsWith("-"))
+        .map(resolveKey);
 
       if (hasAll || inclusions.length === 0) {
         sectionKeys = kindDefaults.filter(
-          (k) => !exclusions.includes(k),
+          (k) => !exclusionSet.has(k),
         );
       } else {
         sectionKeys = inclusions;

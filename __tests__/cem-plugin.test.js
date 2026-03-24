@@ -3,6 +3,8 @@ import { readFileSync } from "fs";
 import wtfmCemPlugin, {
   parseTagValue,
   recoverTagsFromSource,
+  extractExamples,
+  extractExamplesFromBlock,
 } from "../src/server/cem-plugin.js";
 
 vi.mock("fs", () => ({
@@ -283,7 +285,17 @@ export class EspOrdered extends LitElement {}
     });
   });
 
-  it("does not modify declarations that already have tags", () => {
+  it("does not overwrite tags on declarations that already have them", () => {
+    readFileSync.mockReturnValue(`
+      /**
+       * A button.
+       * @docUrl /components/button
+       * @docPageTitle Button
+       */
+      @customElement("esp-button")
+      export class EspButton extends LitElement {}
+    `);
+
     const manifest = {
       modules: [
         {
@@ -304,8 +316,9 @@ export class EspOrdered extends LitElement {}
     const plugin = wtfmCemPlugin();
     plugin.packageLinkPhase({ customElementsManifest: manifest });
 
-    // readFileSync should never have been called
-    expect(readFileSync).not.toHaveBeenCalled();
+    // Tags should not be overwritten
+    const decl = manifest.modules[0].declarations[0];
+    expect(decl.docUrl).toEqual({ name: "/components/button", description: "" });
   });
 
   it("skips declarations that are not custom elements", () => {
@@ -356,6 +369,29 @@ export class EspOrdered extends LitElement {}
     expect(() =>
       plugin.packageLinkPhase({ customElementsManifest: manifest }),
     ).not.toThrow();
+  });
+
+  it("handles modules with missing path gracefully", () => {
+    const manifest = {
+      modules: [
+        {
+          // No path property
+          declarations: [
+            {
+              name: "NoPathEl",
+              tagName: "no-path-el",
+              customElement: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    expect(() =>
+      plugin.packageLinkPhase({ customElementsManifest: manifest }),
+    ).not.toThrow();
+    expect(readFileSync).not.toHaveBeenCalled();
   });
 
   it("handles source files with no matching JSDoc blocks", () => {
@@ -421,6 +457,50 @@ export class EspOrdered extends LitElement {}
     });
   });
 
+  it("reads each module source file only once (caches per path)", () => {
+    readFileSync.mockReturnValue(`
+      /**
+       * @docPageTitle Alpha
+       * @docUrl /components/alpha
+       */
+      @customElement("alpha-el")
+      export class AlphaEl extends LitElement {}
+
+      /**
+       * @docPageTitle Beta
+       * @docUrl /components/beta
+       */
+      @customElement("beta-el")
+      export class BetaEl extends LitElement {}
+    `);
+
+    const manifest = {
+      modules: [
+        {
+          path: "src/multi.ts",
+          declarations: [
+            {
+              name: "AlphaEl",
+              tagName: "alpha-el",
+              customElement: true,
+            },
+            {
+              name: "BetaEl",
+              tagName: "beta-el",
+              customElement: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    // File should only be read once despite two declarations.
+    expect(readFileSync).toHaveBeenCalledTimes(1);
+  });
+
   it("processes multiple modules, only recovering where needed", () => {
     readFileSync.mockReturnValue(`
       /**
@@ -462,8 +542,9 @@ export class EspOrdered extends LitElement {}
     const plugin = wtfmCemPlugin();
     plugin.packageLinkPhase({ customElementsManifest: manifest });
 
-    // Good module untouched — file not read
-    expect(readFileSync).toHaveBeenCalledTimes(1);
+    // Both modules read (tags only recovered for missing, but
+    // examples are extracted for both).
+    expect(readFileSync).toHaveBeenCalledTimes(2);
 
     // Missing module recovered
     const decl = manifest.modules[1].declarations[0];
@@ -475,5 +556,476 @@ export class EspOrdered extends LitElement {}
       name: "/components/missing",
       description: "",
     });
+  });
+
+  it("extracts @example blocks and stores them as decl.examples", () => {
+    const source = `
+/**
+ * A hero section.
+ *
+ * @docPageTitle Hero
+ * @docUrl /components/hero
+ *
+ * @example Simple hero
+ * \`\`\`html
+ * <taproot-hero hero-title="Hello"></taproot-hero>
+ * \`\`\`
+ *
+ * @example Hero with image
+ * \`\`\`html
+ * <taproot-hero hero-title="Photo" layout="split">
+ *   <img slot="media" src="photo.jpg" />
+ * </taproot-hero>
+ * \`\`\`
+ */
+@customElement("taproot-hero")
+export class TaprootHero extends EspalierElementBase {}
+`;
+    readFileSync.mockReturnValue(source);
+
+    const manifest = {
+      modules: [
+        {
+          path: "src/hero/taproot-hero.ts",
+          declarations: [
+            {
+              name: "TaprootHero",
+              tagName: "taproot-hero",
+              customElement: true,
+              docUrl: { name: "/components/hero", description: "" },
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    const decl = manifest.modules[0].declarations[0];
+    expect(decl.examples).toHaveLength(2);
+    expect(decl.examples[0].title).toBe("Simple hero");
+    expect(decl.examples[0].body).toContain("taproot-hero");
+    expect(decl.examples[1].title).toBe("Hero with image");
+    expect(decl.examples[1].body).toContain('layout="split"');
+  });
+
+  it("scopes examples to the correct declaration in multi-class files", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * @example Beta example
+ * \`\`\`html
+ * <beta-el></beta-el>
+ * \`\`\`
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    readFileSync.mockReturnValue(source);
+
+    const manifest = {
+      modules: [
+        {
+          path: "src/multi.ts",
+          declarations: [
+            {
+              name: "AlphaEl",
+              tagName: "alpha-el",
+              customElement: true,
+              docUrl: { name: "/alpha", description: "" },
+            },
+            {
+              name: "BetaEl",
+              tagName: "beta-el",
+              customElement: true,
+              docUrl: { name: "/beta", description: "" },
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    const alphaDecl = manifest.modules[0].declarations[0];
+    const betaDecl = manifest.modules[0].declarations[1];
+
+    expect(alphaDecl.examples).toHaveLength(1);
+    expect(alphaDecl.examples[0].title).toBe("Alpha example");
+    expect(alphaDecl.examples[0].body).toContain("alpha-el");
+
+    expect(betaDecl.examples).toHaveLength(1);
+    expect(betaDecl.examples[0].title).toBe("Beta example");
+    expect(betaDecl.examples[0].body).toContain("beta-el");
+  });
+
+  it("does not overwrite existing examples", () => {
+    readFileSync.mockReturnValue(`
+      /**
+       * @docUrl /foo
+       * @example From source
+       * \`\`\`html
+       * <my-el></my-el>
+       * \`\`\`
+       */
+      @customElement("my-el")
+      export class MyEl extends LitElement {}
+    `);
+
+    const existingExamples = [{ title: "Pre-existing", body: "<div></div>" }];
+    const manifest = {
+      modules: [
+        {
+          path: "src/my-el.ts",
+          declarations: [
+            {
+              name: "MyEl",
+              tagName: "my-el",
+              customElement: true,
+              docUrl: { name: "/foo", description: "" },
+              examples: existingExamples,
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    const decl = manifest.modules[0].declarations[0];
+    expect(decl.examples).toBe(existingExamples);
+    expect(decl.examples[0].title).toBe("Pre-existing");
+  });
+});
+
+// ── extractExamplesFromBlock ─────────────────────────────────────
+
+describe("extractExamplesFromBlock", () => {
+  it("extracts examples from a single JSDoc block", () => {
+    const block = `/**
+ * A component.
+ *
+ * @example Basic usage
+ * \`\`\`html
+ * <my-el>Hello</my-el>
+ * \`\`\`
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Basic usage");
+    expect(result[0].body).toContain("<my-el>Hello</my-el>");
+  });
+
+  it("returns empty array when no @example tags exist", () => {
+    const block = `/**
+ * Just a description.
+ * @param x - something
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toEqual([]);
+  });
+
+  it("handles extra whitespace after the leading *", () => {
+    const block = `/**
+ *   @example Indented example
+ *   \`\`\`html
+ *   <my-el></my-el>
+ *   \`\`\`
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Indented example");
+    expect(result[0].body).toContain("<my-el>");
+  });
+
+  it("preserves @-rules inside fenced code blocks", () => {
+    const block = `/**
+ * @example With CSS @media
+ * \`\`\`html
+ * <style>
+ *   @media (max-width: 48em) {
+ *     .hero { flex-direction: column; }
+ *   }
+ * </style>
+ * <my-el></my-el>
+ * \`\`\`
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("With CSS @media");
+    expect(result[0].body).toContain("@media");
+    expect(result[0].body).toContain("<my-el>");
+  });
+});
+
+// ── extractExamples (declaration-aware) ──────────────────────────
+
+describe("extractExamples", () => {
+  it("extracts a single @example with title and html body", () => {
+    const source = `
+/**
+ * A component.
+ *
+ * @example Basic usage
+ * \`\`\`html
+ * <my-el>Hello</my-el>
+ * \`\`\`
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Basic usage");
+    expect(result[0].body).toContain("<my-el>Hello</my-el>");
+  });
+
+  it("extracts multiple @example blocks", () => {
+    const source = `
+/**
+ * @example First
+ * \`\`\`html
+ * <my-el first></my-el>
+ * \`\`\`
+ *
+ * @example Second
+ * \`\`\`html
+ * <my-el second></my-el>
+ * \`\`\`
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(2);
+    expect(result[0].title).toBe("First");
+    expect(result[1].title).toBe("Second");
+  });
+
+  it("handles @example with no title", () => {
+    const source = `
+/**
+ * @example
+ * \`\`\`html
+ * <my-el></my-el>
+ * \`\`\`
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("");
+    expect(result[0].body).toContain("<my-el>");
+  });
+
+  it("stops collecting body when another @tag appears", () => {
+    const source = `
+/**
+ * @example Usage
+ * \`\`\`html
+ * <my-el></my-el>
+ * \`\`\`
+ * @slot default - The main slot
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].body).not.toContain("@slot");
+  });
+
+  it("returns empty array when no @example tags exist", () => {
+    const source = `
+/**
+ * Just a description.
+ * @param x - something
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toEqual([]);
+  });
+
+  it("scopes to the correct class when declName is provided", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * @example Beta example
+ * \`\`\`html
+ * <beta-el></beta-el>
+ * \`\`\`
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    const alphaResult = extractExamples(source, "AlphaEl");
+    expect(alphaResult).toHaveLength(1);
+    expect(alphaResult[0].title).toBe("Alpha example");
+
+    const betaResult = extractExamples(source, "BetaEl");
+    expect(betaResult).toHaveLength(1);
+    expect(betaResult[0].title).toBe("Beta example");
+  });
+
+  it("falls back to first JSDoc block when declName is not found", () => {
+    const source = `
+/**
+ * @example Fallback example
+ * \`\`\`html
+ * <my-el></my-el>
+ * \`\`\`
+ */
+class UnrelatedClass {}
+`;
+    const result = extractExamples(source, "NonExistentClass");
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Fallback example");
+  });
+
+  it("falls back when declName is not provided", () => {
+    const source = `
+/**
+ * @example First block
+ * \`\`\`html
+ * <first></first>
+ * \`\`\`
+ */
+class A {}
+
+/**
+ * @example Second block
+ * \`\`\`html
+ * <second></second>
+ * \`\`\`
+ */
+class B {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("First block");
+  });
+
+  it("returns empty for a class whose JSDoc has no @example (does not misattribute)", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * Just a description, no examples here.
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    const betaResult = extractExamples(source, "BetaEl");
+    expect(betaResult).toEqual([]);
+  });
+
+  it("returns empty when class is found but has no preceding JSDoc", () => {
+    const source = `
+@customElement("bare-el")
+export class BareEl extends LitElement {}
+`;
+    const result = extractExamples(source, "BareEl");
+    expect(result).toEqual([]);
+  });
+
+  it("does not grab a distant JSDoc from another class (adjacency check)", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+// Some unrelated code
+const x = 42;
+
+@customElement("gamma-el")
+export class GammaEl extends LitElement {}
+`;
+    // GammaEl has no JSDoc at all — should not pick up AlphaEl's examples
+    const gammaResult = extractExamples(source, "GammaEl");
+    expect(gammaResult).toEqual([]);
+
+    // AlphaEl's examples should still work
+    const alphaResult = extractExamples(source, "AlphaEl");
+    expect(alphaResult).toHaveLength(1);
+    expect(alphaResult[0].title).toBe("Alpha example");
+  });
+
+  it("scopes by tagName when declName is not provided", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * @example Beta example
+ * \`\`\`html
+ * <beta-el></beta-el>
+ * \`\`\`
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    // Scope by tag name instead of class name
+    const alphaResult = extractExamples(source, undefined, "alpha-el");
+    expect(alphaResult).toHaveLength(1);
+    expect(alphaResult[0].title).toBe("Alpha example");
+
+    const betaResult = extractExamples(source, undefined, "beta-el");
+    expect(betaResult).toHaveLength(1);
+    expect(betaResult[0].title).toBe("Beta example");
+  });
+
+  it("returns empty when tagName decorator found but no adjacent JSDoc", () => {
+    const source = `
+/**
+ * @example Unrelated example
+ * \`\`\`html
+ * <other-el></other-el>
+ * \`\`\`
+ */
+@customElement("other-el")
+export class OtherEl extends LitElement {}
+
+const x = 42;
+
+@customElement("bare-el")
+export class BareEl extends LitElement {}
+`;
+    const result = extractExamples(source, undefined, "bare-el");
+    expect(result).toEqual([]);
   });
 });

@@ -1,10 +1,20 @@
 import * as prettier from "prettier";
+import { buildCemContext } from "./build-cem-context.js";
 
 /**
- * Section renderer that extracts the first ```html code block from
- * a component's JSDoc description and emits a `<wtfm-code-block>`
- * element with live demo, syntax highlighting, an attribute
- * playground, and an event log.
+ * Section renderer that emits interactive `<wtfm-code-block>` elements
+ * for each `@example` JSDoc block on a component.
+ *
+ * The examples array is populated by the WTFM CEM plugin
+ * (`cem-plugin.js`), which extracts `@example` blocks from source
+ * JSDoc comments and stores them as `decl.examples`. Each entry has
+ * a `title` (text after `@example`) and a `body` (content, typically
+ * a fenced ```html code block).
+ *
+ * Only renders when `decl.examples` is present. Components that embed
+ * examples in their description (```html blocks) are already handled
+ * by `renderDocs`' description processing — duplicating them here
+ * would show the same demo twice.
  *
  * CEM metadata (attributes, events, slots) is serialised as a
  * `<script type="application/json">` child so the component can
@@ -16,65 +26,76 @@ export const examplesRenderer = {
   intro: "",
 
   async render(decl, options) {
-    const { excludeAttributes = [], attributeExceptions = {} } = options;
+    if (!decl.examples?.length) return "";
 
-    // ── Extract first ```html block from description ──────────
-    const desc = decl.description || "";
-    const htmlIndex = desc.indexOf("```html");
-    if (htmlIndex < 0) return "";
-
-    const codeBlockEnd = desc.indexOf("```", htmlIndex + 7);
-    if (codeBlockEnd < 0) return "";
-
-    const rawHtml = desc.substring(htmlIndex + 7, codeBlockEnd).trim();
-
-    let formattedHtml;
-    try {
-      formattedHtml = await prettier.format(rawHtml, {
-        parser: "html",
-        htmlWhitespaceSensitivity: "ignore",
-      });
-    } catch {
-      formattedHtml = rawHtml;
-    }
-
-    // ── Build CEM metadata ────────────────────────────────────
-    const attrs = (decl.attributes ?? [])
-      .filter((a) => {
-        if (!excludeAttributes.includes(a.name)) return true;
-        const exceptions = attributeExceptions[a.name];
-        return exceptions && exceptions.includes(decl.tagName);
-      })
-      .map((a) => ({
-        name: a.name,
-        type: a.type?.text || "string",
-        default: a.default,
-      }));
-
-    const events = (decl.events ?? []).map((e) => ({
-      name: e.name,
-      type: e.type?.text || "",
-    }));
-
-    const slots = (decl.slots ?? []).map((s) => ({
-      name: s.name,
-      description: (s.description || "").split("\n")[0],
-    }));
-
-    // Escape closing tags so the JSON is safe inside a <script> element.
-    const cemJson = JSON.stringify({ attributes: attrs, events, slots }).replaceAll(
-      "</",
-      "<\\/",
-    );
-
-    // ── Emit the interactive code block ───────────────────────
-    return `
-## ${this.heading}
-
-<wtfm-code-block tag-name="${decl.tagName}">
-  <template>${formattedHtml.trim()}</template>
-  <script type="application/json">${cemJson}</script>
-</wtfm-code-block>
-`;
+    const cemContext = buildCemContext(decl, options);
+    return renderExampleBlocks(decl.examples, decl.tagName, this.heading, cemContext);
   },
 };
+
+/**
+ * Render multiple @example blocks, each as a titled code block.
+ *
+ * @param {Array<{title: string, body: string}>} examples
+ * @param {string} tagName
+ * @param {string} heading  Section heading (from the renderer instance).
+ * @param {object} cemContext
+ * @returns {Promise<string>}
+ */
+async function renderExampleBlocks(examples, tagName, heading, cemContext) {
+  const blocks = [];
+
+  for (const example of examples) {
+    const htmlCode = extractHtmlFromBody(example.body);
+    if (!htmlCode) continue;
+
+    const formatted = await formatHtml(htmlCode);
+    const encoded = Buffer.from(formatted).toString("base64");
+    const title = example.title || "";
+
+    let block = "";
+    if (title) {
+      block += `\n### ${title}\n\n`;
+    }
+    block += `<wtfm-code-block tag-name="${tagName}" source="${encoded}">
+  <script type="application/json">${cemContext.cemJson}</script>
+</wtfm-code-block>\n`;
+
+    blocks.push(block);
+  }
+
+  if (blocks.length === 0) return "";
+
+  return `\n## ${heading}\n\n${blocks.join("\n")}`;
+}
+
+/**
+ * Extract the HTML content from an @example body. Returns the content
+ * of the first ```html fenced code block, or null if none is found.
+ *
+ * Unfenced bodies (plain text, non-HTML fenced blocks) are not treated
+ * as HTML — they would produce confusing demos in `<wtfm-code-block>`.
+ */
+function extractHtmlFromBody(body) {
+  const htmlIndex = body.indexOf("```html");
+  if (htmlIndex < 0) return null;
+  const codeStart = htmlIndex + 7;
+  const codeEnd = body.indexOf("```", codeStart);
+  if (codeEnd < 0) return body.substring(codeStart).trim() || null;
+  return body.substring(codeStart, codeEnd).trim() || null;
+}
+
+/**
+ * Format HTML with Prettier for consistent indentation.
+ */
+async function formatHtml(html) {
+  try {
+    const formatted = await prettier.format(html, {
+      parser: "html",
+      htmlWhitespaceSensitivity: "ignore",
+    });
+    return formatted.trim();
+  } catch {
+    return html.trim();
+  }
+}

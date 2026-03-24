@@ -9,6 +9,7 @@ export { cssPartsRenderer } from "./css-parts.js";
 export { cssPropertiesRenderer } from "./css-properties.js";
 export { propertiesRenderer } from "./properties.js";
 export { parametersRenderer } from "./parameters.js";
+export { examplesRenderer } from "./examples.js";
 
 import { slotsRenderer } from "./slots.js";
 import { attributesRenderer } from "./attributes.js";
@@ -18,6 +19,7 @@ import { cssPartsRenderer } from "./css-parts.js";
 import { cssPropertiesRenderer } from "./css-properties.js";
 import { propertiesRenderer } from "./properties.js";
 import { parametersRenderer } from "./parameters.js";
+import { examplesRenderer } from "./examples.js";
 
 /**
  * The default section renderers for component declarations,
@@ -25,6 +27,7 @@ import { parametersRenderer } from "./parameters.js";
  * Consumers can import this to reference, reorder, or extend.
  */
 export const defaultRenderers = [
+  examplesRenderer,
   slotsRenderer,
   attributesRenderer,
   methodsRenderer,
