@@ -921,4 +921,34 @@ class B {}
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe("First block");
   });
+
+  it("returns empty for a class whose JSDoc has no @example (does not misattribute)", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * Just a description, no examples here.
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    const betaResult = extractExamples(source, "BetaEl");
+    expect(betaResult).toEqual([]);
+  });
+
+  it("returns empty when class is found but has no preceding JSDoc", () => {
+    const source = `
+@customElement("bare-el")
+export class BareEl extends LitElement {}
+`;
+    const result = extractExamples(source, "BareEl");
+    expect(result).toEqual([]);
+  });
 });

@@ -160,8 +160,9 @@ export function extractExamplesFromBlock(block) {
  * declaration. Finds the JSDoc block that immediately precedes the
  * class declaration for the given name and extracts examples from it.
  *
- * Falls back to scanning all JSDoc blocks if the declaration-specific
- * search fails (e.g. for unusual source layouts).
+ * Falls back to scanning all JSDoc blocks only when `declName` is not
+ * provided or the class is not found in the source. When the class is
+ * found, only its own JSDoc is checked — this prevents misattribution.
  *
  * @param {string} source    Full source text of the file.
  * @param {string} declName  The class name to match (e.g. "TaprootHero").
@@ -187,15 +188,21 @@ export function extractExamples(source, declName) {
         lastBlock = blockMatch[0];
       }
 
+      // We found the class and its JSDoc — return whatever examples it has
+      // (possibly empty). Do NOT fall through to the global scan, as that
+      // could misattribute examples from another declaration's JSDoc.
       if (lastBlock) {
-        const examples = extractExamplesFromBlock(lastBlock);
-        if (examples.length > 0) return examples;
+        return extractExamplesFromBlock(lastBlock);
       }
+
+      // Class found but no preceding JSDoc block at all.
+      return [];
     }
   }
 
   // Strategy 2: Fall back to scanning all JSDoc blocks and returning
-  // the first one that contains @example tags.
+  // the first one that contains @example tags. Only used when declName
+  // is not provided or the class was not found in the source.
   const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
   let blockMatch;
 
@@ -282,6 +289,15 @@ export default function wtfmCemPlugin(options = {}) {
 
         if (ceDecls.length === 0) continue;
         if (!mod.path) continue;
+
+        // Skip I/O if every declaration already has doc tags and examples.
+        const needsSource = ceDecls.some(
+          (d) =>
+            !tagNames.some((t) => d[t]) ||
+            !d.examples ||
+            d.examples.length === 0,
+        );
+        if (!needsSource) continue;
 
         // Read the source file once per module.
         let source;
