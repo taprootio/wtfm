@@ -505,8 +505,8 @@ ${src}
           overflow-x: auto;
           /* Override Shiki's inline background/color so the design
              system tokens control all colors. */
-          background-color: var(--esp-color-bg-2) !important;
-          color: var(--esp-color-text) !important;
+          background-color: var(--esp-color-bg-2, #f5f5f5) !important;
+          color: var(--esp-color-text, #333) !important;
         }
       }
 
