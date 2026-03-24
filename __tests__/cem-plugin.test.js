@@ -371,6 +371,29 @@ export class EspOrdered extends LitElement {}
     ).not.toThrow();
   });
 
+  it("handles modules with missing path gracefully", () => {
+    const manifest = {
+      modules: [
+        {
+          // No path property
+          declarations: [
+            {
+              name: "NoPathEl",
+              tagName: "no-path-el",
+              customElement: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    expect(() =>
+      plugin.packageLinkPhase({ customElementsManifest: manifest }),
+    ).not.toThrow();
+    expect(readFileSync).not.toHaveBeenCalled();
+  });
+
   it("handles source files with no matching JSDoc blocks", () => {
     readFileSync.mockReturnValue(`
       /** Just a plain class. */

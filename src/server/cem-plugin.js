@@ -281,6 +281,7 @@ export default function wtfmCemPlugin(options = {}) {
         );
 
         if (ceDecls.length === 0) continue;
+        if (!mod.path) continue;
 
         // Read the source file once per module.
         let source;
