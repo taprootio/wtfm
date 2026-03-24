@@ -95,17 +95,15 @@ async function renderDescriptionFallback(decl, cemContext) {
 }
 
 /**
- * Extract the HTML content from an @example body. The body may be
- * a bare fenced code block (```html ... ```) or may contain the
- * code block among other text.
+ * Extract the HTML content from an @example body. Returns the content
+ * of the first ```html fenced code block, or null if none is found.
+ *
+ * Unfenced bodies (plain text, non-HTML fenced blocks) are not treated
+ * as HTML — they would produce confusing demos in `<wtfm-code-block>`.
  */
 function extractHtmlFromBody(body) {
   const htmlIndex = body.indexOf("```html");
-  if (htmlIndex < 0) {
-    // No fenced block — treat the whole body as HTML if non-empty.
-    const trimmed = body.trim();
-    return trimmed || null;
-  }
+  if (htmlIndex < 0) return null;
   const codeStart = htmlIndex + 7;
   const codeEnd = body.indexOf("```", codeStart);
   if (codeEnd < 0) return body.substring(codeStart).trim() || null;

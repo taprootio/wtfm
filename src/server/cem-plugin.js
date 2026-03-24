@@ -194,13 +194,23 @@ export function extractExamples(source, declName) {
         lastBlockEnd = blockMatch.index + blockMatch[0].length;
       }
 
-      // Verify the JSDoc is directly adjacent: the text between the
+      // Verify the JSDoc is directly adjacent: the gap between the
       // end of the JSDoc and the class keyword must contain only
-      // whitespace, decorators, and export/default — no statement
-      // terminators (} or ;) that indicate intervening code.
+      // whitespace, decorator lines (starting with @), and the
+      // keywords `export` / `default`. Any other content (variable
+      // declarations, function calls, other code) means the JSDoc
+      // belongs to something else.
       if (lastBlock && lastBlockEnd >= 0) {
         const gap = textBefore.slice(lastBlockEnd);
-        if (!/[};]/.test(gap)) {
+        const gapLines = gap.split("\n").map((l) => l.trim()).filter(Boolean);
+        const isAdjacent = gapLines.every(
+          (line) =>
+            line.startsWith("@") ||
+            line === "export" ||
+            line === "default" ||
+            line === "export default",
+        );
+        if (isAdjacent) {
           return extractExamplesFromBlock(lastBlock);
         }
       }
@@ -326,6 +336,10 @@ export default function wtfmCemPlugin(options = {}) {
 
         if (!source) continue;
 
+        // Build a per-module cache of className → examples so we scan
+        // the source once for all declarations instead of once per decl.
+        const examplesCache = new Map();
+
         for (const decl of ceDecls) {
           // ── Recover missing doc tags ──────────────────────────
           const needsTagRecovery = !tagNames.some((t) => decl[t]);
@@ -339,7 +353,11 @@ export default function wtfmCemPlugin(options = {}) {
 
           // ── Extract @example blocks scoped to this declaration ─
           if (!decl.examples || decl.examples.length === 0) {
-            const examples = extractExamples(source, decl.name);
+            const cacheKey = decl.name ?? "";
+            if (!examplesCache.has(cacheKey)) {
+              examplesCache.set(cacheKey, extractExamples(source, decl.name));
+            }
+            const examples = examplesCache.get(cacheKey);
             if (examples.length > 0) {
               decl.examples = examples;
             }
