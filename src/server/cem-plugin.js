@@ -355,11 +355,23 @@ export default function wtfmCemPlugin(options = {}) {
 
           // ── Extract @example blocks scoped to this declaration ─
           if (!decl.examples || decl.examples.length === 0) {
-            const cacheKey = decl.name ?? "";
-            if (!examplesCache.has(cacheKey)) {
-              examplesCache.set(cacheKey, extractExamples(source, decl.name));
+            // Use name + tagName as cache key to avoid collisions when
+            // decl.name is missing. Skip caching entirely when both are
+            // falsy to prevent misattribution across unnamed declarations.
+            const cacheKey = decl.name
+              ? `name:${decl.name}`
+              : decl.tagName
+                ? `tag:${decl.tagName}`
+                : null;
+
+            let examples;
+            if (cacheKey && examplesCache.has(cacheKey)) {
+              examples = examplesCache.get(cacheKey);
+            } else {
+              examples = extractExamples(source, decl.name);
+              if (cacheKey) examplesCache.set(cacheKey, examples);
             }
-            const examples = examplesCache.get(cacheKey);
+
             if (examples.length > 0) {
               decl.examples = examples;
             }

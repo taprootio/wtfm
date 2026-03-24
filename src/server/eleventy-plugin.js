@@ -146,8 +146,8 @@ function buildFunctionSignature(decl) {
  * @param {(string|{key: string})[]} [options.sections] - Array of
  *   section keys (or objects with a `key` property) defining the
  *   default rendering order.  When omitted, the built-in order is
- *   used: `slots`, `attributes`, `methods`, `events`, `css-parts`,
- *   `css-properties`.
+ *   used: `examples`, `slots`, `attributes`, `methods`, `events`,
+ *   `css-parts`, `css-properties`.
  *
  *   Individual components can override this order via the
  *   `@docSections` JSDoc tag in their source:
@@ -448,9 +448,10 @@ type ${decl.name} = ${decl.type.text}
       // Resolve aliases so abbreviations like "cssprops" work
       // consistently. Inclusions only resolve when the key isn't
       // already a registered renderer — so a custom renderer under
-      // the alias name is not bypassed. Exclusions include both the
-      // alias and its canonical form so filtering works regardless
-      // of which form kindDefaults uses.
+      // the alias name is not bypassed. Exclusions include the raw
+      // key plus all related forms (alias → canonical and canonical
+      // → aliases) so filtering works regardless of which form
+      // kindDefaults uses.
       const resolveKey = (key) =>
         rendererMap.has(key) ? key : (KEY_ALIASES[key] ?? key);
 
@@ -459,10 +460,13 @@ type ${decl.name} = ${decl.type.text}
       for (const s of docSections) {
         if (!s.startsWith("-")) continue;
         const raw = s.substring(1);
-        // Include both the raw key and its canonical form so the
-        // exclusion matches regardless of which is in kindDefaults.
         exclusionSet.add(raw);
+        // alias → canonical (e.g. cssprops → css-properties)
         if (KEY_ALIASES[raw]) exclusionSet.add(KEY_ALIASES[raw]);
+        // canonical → aliases (e.g. css-properties → cssprops)
+        for (const [alias, canonical] of Object.entries(KEY_ALIASES)) {
+          if (canonical === raw) exclusionSet.add(alias);
+        }
       }
       const inclusions = docSections
         .filter((s) => s !== "all" && !s.startsWith("-"))
