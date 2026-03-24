@@ -73,7 +73,8 @@
     "build:server": "mkdir -p dist && rm -rf dist/server && cp -r src/server dist/server",
     "build:client": "tsc --project tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
