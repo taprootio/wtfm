@@ -3,6 +3,7 @@ import { readFileSync } from "fs";
 import wtfmCemPlugin, {
   parseTagValue,
   recoverTagsFromSource,
+  extractExamples,
 } from "../src/server/cem-plugin.js";
 
 vi.mock("fs", () => ({
@@ -283,7 +284,17 @@ export class EspOrdered extends LitElement {}
     });
   });
 
-  it("does not modify declarations that already have tags", () => {
+  it("does not overwrite tags on declarations that already have them", () => {
+    readFileSync.mockReturnValue(`
+      /**
+       * A button.
+       * @docUrl /components/button
+       * @docPageTitle Button
+       */
+      @customElement("esp-button")
+      export class EspButton extends LitElement {}
+    `);
+
     const manifest = {
       modules: [
         {
@@ -304,8 +315,9 @@ export class EspOrdered extends LitElement {}
     const plugin = wtfmCemPlugin();
     plugin.packageLinkPhase({ customElementsManifest: manifest });
 
-    // readFileSync should never have been called
-    expect(readFileSync).not.toHaveBeenCalled();
+    // Tags should not be overwritten
+    const decl = manifest.modules[0].declarations[0];
+    expect(decl.docUrl).toEqual({ name: "/components/button", description: "" });
   });
 
   it("skips declarations that are not custom elements", () => {
@@ -462,8 +474,9 @@ export class EspOrdered extends LitElement {}
     const plugin = wtfmCemPlugin();
     plugin.packageLinkPhase({ customElementsManifest: manifest });
 
-    // Good module untouched — file not read
-    expect(readFileSync).toHaveBeenCalledTimes(1);
+    // Both modules read (tags only recovered for missing, but
+    // examples are extracted for both).
+    expect(readFileSync).toHaveBeenCalledTimes(2);
 
     // Missing module recovered
     const decl = manifest.modules[1].declarations[0];
@@ -475,5 +488,206 @@ export class EspOrdered extends LitElement {}
       name: "/components/missing",
       description: "",
     });
+  });
+
+  it("extracts @example blocks and stores them as decl.examples", () => {
+    const source = `
+/**
+ * A hero section.
+ *
+ * @docPageTitle Hero
+ * @docUrl /components/hero
+ *
+ * @example Simple hero
+ * \`\`\`html
+ * <taproot-hero hero-title="Hello"></taproot-hero>
+ * \`\`\`
+ *
+ * @example Hero with image
+ * \`\`\`html
+ * <taproot-hero hero-title="Photo" layout="split">
+ *   <img slot="media" src="photo.jpg" />
+ * </taproot-hero>
+ * \`\`\`
+ */
+@customElement("taproot-hero")
+export class TaprootHero extends EspalierElementBase {}
+`;
+    readFileSync.mockReturnValue(source);
+
+    const manifest = {
+      modules: [
+        {
+          path: "src/hero/taproot-hero.ts",
+          declarations: [
+            {
+              name: "TaprootHero",
+              tagName: "taproot-hero",
+              customElement: true,
+              docUrl: { name: "/components/hero", description: "" },
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    const decl = manifest.modules[0].declarations[0];
+    expect(decl.examples).toHaveLength(2);
+    expect(decl.examples[0].title).toBe("Simple hero");
+    expect(decl.examples[0].body).toContain("taproot-hero");
+    expect(decl.examples[1].title).toBe("Hero with image");
+    expect(decl.examples[1].body).toContain('layout="split"');
+  });
+
+  it("does not overwrite existing examples", () => {
+    readFileSync.mockReturnValue(`
+      /**
+       * @docUrl /foo
+       * @example From source
+       * \`\`\`html
+       * <my-el></my-el>
+       * \`\`\`
+       */
+      @customElement("my-el")
+      export class MyEl extends LitElement {}
+    `);
+
+    const existingExamples = [{ title: "Pre-existing", body: "<div></div>" }];
+    const manifest = {
+      modules: [
+        {
+          path: "src/my-el.ts",
+          declarations: [
+            {
+              name: "MyEl",
+              tagName: "my-el",
+              customElement: true,
+              docUrl: { name: "/foo", description: "" },
+              examples: existingExamples,
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    const decl = manifest.modules[0].declarations[0];
+    expect(decl.examples).toBe(existingExamples);
+    expect(decl.examples[0].title).toBe("Pre-existing");
+  });
+});
+
+// ── extractExamples ──────────────────────────────────────────────
+
+describe("extractExamples", () => {
+  it("extracts a single @example with title and html body", () => {
+    const source = `
+/**
+ * A component.
+ *
+ * @example Basic usage
+ * \`\`\`html
+ * <my-el>Hello</my-el>
+ * \`\`\`
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Basic usage");
+    expect(result[0].body).toContain("<my-el>Hello</my-el>");
+  });
+
+  it("extracts multiple @example blocks", () => {
+    const source = `
+/**
+ * @example First
+ * \`\`\`html
+ * <my-el first></my-el>
+ * \`\`\`
+ *
+ * @example Second
+ * \`\`\`html
+ * <my-el second></my-el>
+ * \`\`\`
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(2);
+    expect(result[0].title).toBe("First");
+    expect(result[1].title).toBe("Second");
+  });
+
+  it("handles @example with no title", () => {
+    const source = `
+/**
+ * @example
+ * \`\`\`html
+ * <my-el></my-el>
+ * \`\`\`
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("");
+    expect(result[0].body).toContain("<my-el>");
+  });
+
+  it("stops collecting body when another @tag appears", () => {
+    const source = `
+/**
+ * @example Usage
+ * \`\`\`html
+ * <my-el></my-el>
+ * \`\`\`
+ * @slot default - The main slot
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].body).not.toContain("@slot");
+  });
+
+  it("returns empty array when no @example tags exist", () => {
+    const source = `
+/**
+ * Just a description.
+ * @param x - something
+ */
+export class MyEl {}
+`;
+    const result = extractExamples(source);
+    expect(result).toEqual([]);
+  });
+
+  it("only processes the first JSDoc block with @example", () => {
+    const source = `
+/**
+ * @example First block
+ * \`\`\`html
+ * <first></first>
+ * \`\`\`
+ */
+class A {}
+
+/**
+ * @example Second block
+ * \`\`\`html
+ * <second></second>
+ * \`\`\`
+ */
+class B {}
+`;
+    const result = extractExamples(source);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("First block");
   });
 });

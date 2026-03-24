@@ -82,6 +82,82 @@ export function recoverTagsFromSource(source, tagNames) {
 }
 
 /**
+ * Extracts `@example` blocks from a JSDoc comment.
+ *
+ * Each `@example` tag has an optional title on the same line and a
+ * body that typically contains a fenced code block. The body extends
+ * until the next `@example`, another `@tag`, or the end of the JSDoc
+ * comment.
+ *
+ * Returns an array of `{ title, body }` objects. Both `title` and
+ * `body` are trimmed strings. `title` may be empty if the tag has
+ * no inline text.
+ *
+ * @param {string} source  Full source text of the file.
+ * @returns {Array<{ title: string, body: string }>}
+ */
+export function extractExamples(source) {
+  const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
+  let match;
+  const examples = [];
+
+  while ((match = jsdocPattern.exec(source)) !== null) {
+    const block = match[0];
+    if (!block.includes("@example")) continue;
+
+    // Strip the comment delimiters and leading ` * ` from each line
+    // to get the raw content.
+    const lines = block
+      .replace(/^\/\*\*\s*/, "")
+      .replace(/\s*\*\/\s*$/, "")
+      .split("\n")
+      .map((line) => line.replace(/^\s*\*\s?/, ""));
+
+    let currentTitle = null;
+    let currentBody = [];
+
+    for (const line of lines) {
+      if (line.startsWith("@example")) {
+        // Flush previous example
+        if (currentTitle !== null) {
+          examples.push({
+            title: currentTitle,
+            body: currentBody.join("\n").trim(),
+          });
+        }
+        currentTitle = line.slice("@example".length).trim();
+        currentBody = [];
+      } else if (currentTitle !== null) {
+        // If we hit another JSDoc tag, flush and stop collecting
+        if (/^@\w/.test(line)) {
+          examples.push({
+            title: currentTitle,
+            body: currentBody.join("\n").trim(),
+          });
+          currentTitle = null;
+          currentBody = [];
+        } else {
+          currentBody.push(line);
+        }
+      }
+    }
+
+    // Flush last example in the block
+    if (currentTitle !== null) {
+      examples.push({
+        title: currentTitle,
+        body: currentBody.join("\n").trim(),
+      });
+    }
+
+    // Only process the first JSDoc block that has examples
+    if (examples.length > 0) break;
+  }
+
+  return examples;
+}
+
+/**
  * CEM analyzer plugin that recovers WTFM doc tags lost when the
  * analyzer attaches a JSDoc block to the wrong declaration.
  *
@@ -103,6 +179,15 @@ export function recoverTagsFromSource(source, tagNames) {
  * The recovered tags are written in the same `{ name, description }`
  * format that `@wc-toolkit/jsdoc-tags` produces, so downstream
  * tooling (e.g. WTFM data functions) works unchanged.
+ *
+ * ## `@example` extraction
+ *
+ * The plugin also extracts `@example` JSDoc blocks from source files
+ * for all custom-element declarations (not just those missing tags).
+ * Each `@example` block is parsed into a `{ title, body }` object
+ * where `title` is the text on the `@example` line and `body` is
+ * the content (typically a fenced code block). These are stored in
+ * `decl.examples` as an array.
  *
  * ## Usage
  *
@@ -138,10 +223,9 @@ export default function wtfmCemPlugin(options = {}) {
         );
 
         for (const decl of ceDecls) {
-          // Skip declarations that already have at least one doc tag.
-          if (tagNames.some((t) => decl[t])) continue;
+          // ── Recover missing doc tags ──────────────────────────
+          const needsTagRecovery = !tagNames.some((t) => decl[t]);
 
-          // Try to read the original source file.
           let source;
           try {
             source = readFileSync(resolve(mod.path), "utf-8");
@@ -149,9 +233,19 @@ export default function wtfmCemPlugin(options = {}) {
             continue;
           }
 
-          const recovered = recoverTagsFromSource(source, tagNames);
-          if (recovered) {
-            Object.assign(decl, recovered);
+          if (needsTagRecovery) {
+            const recovered = recoverTagsFromSource(source, tagNames);
+            if (recovered) {
+              Object.assign(decl, recovered);
+            }
+          }
+
+          // ── Extract @example blocks ───────────────────────────
+          if (!decl.examples || decl.examples.length === 0) {
+            const examples = extractExamples(source);
+            if (examples.length > 0) {
+              decl.examples = examples;
+            }
           }
         }
       }

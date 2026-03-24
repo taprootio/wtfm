@@ -206,6 +206,18 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     }
   }
 
+  // Short aliases for commonly used section keys so @docSections
+  // can use either the full key or the abbreviation.
+  const KEY_ALIASES = {
+    cssprops: "css-properties",
+    cssparts: "css-parts",
+  };
+  for (const [alias, canonical] of Object.entries(KEY_ALIASES)) {
+    if (!rendererMap.has(alias) && rendererMap.has(canonical)) {
+      rendererMap.set(alias, rendererMap.get(canonical));
+    }
+  }
+
   // Resolve the default section order (for component declarations)
   const defaultSectionOrder = sections
     ? sections.map((s) => (typeof s === "string" ? s : s.key))
