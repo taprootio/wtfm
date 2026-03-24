@@ -4,6 +4,7 @@ import wtfmCemPlugin, {
   parseTagValue,
   recoverTagsFromSource,
   extractExamples,
+  extractExamplesFromBlock,
 } from "../src/server/cem-plugin.js";
 
 vi.mock("fs", () => ({
@@ -433,6 +434,50 @@ export class EspOrdered extends LitElement {}
     });
   });
 
+  it("reads each module source file only once (caches per path)", () => {
+    readFileSync.mockReturnValue(`
+      /**
+       * @docPageTitle Alpha
+       * @docUrl /components/alpha
+       */
+      @customElement("alpha-el")
+      export class AlphaEl extends LitElement {}
+
+      /**
+       * @docPageTitle Beta
+       * @docUrl /components/beta
+       */
+      @customElement("beta-el")
+      export class BetaEl extends LitElement {}
+    `);
+
+    const manifest = {
+      modules: [
+        {
+          path: "src/multi.ts",
+          declarations: [
+            {
+              name: "AlphaEl",
+              tagName: "alpha-el",
+              customElement: true,
+            },
+            {
+              name: "BetaEl",
+              tagName: "beta-el",
+              customElement: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    // File should only be read once despite two declarations.
+    expect(readFileSync).toHaveBeenCalledTimes(1);
+  });
+
   it("processes multiple modules, only recovering where needed", () => {
     readFileSync.mockReturnValue(`
       /**
@@ -542,6 +587,65 @@ export class TaprootHero extends EspalierElementBase {}
     expect(decl.examples[1].body).toContain('layout="split"');
   });
 
+  it("scopes examples to the correct declaration in multi-class files", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * @example Beta example
+ * \`\`\`html
+ * <beta-el></beta-el>
+ * \`\`\`
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    readFileSync.mockReturnValue(source);
+
+    const manifest = {
+      modules: [
+        {
+          path: "src/multi.ts",
+          declarations: [
+            {
+              name: "AlphaEl",
+              tagName: "alpha-el",
+              customElement: true,
+              docUrl: { name: "/alpha", description: "" },
+            },
+            {
+              name: "BetaEl",
+              tagName: "beta-el",
+              customElement: true,
+              docUrl: { name: "/beta", description: "" },
+            },
+          ],
+        },
+      ],
+    };
+
+    const plugin = wtfmCemPlugin();
+    plugin.packageLinkPhase({ customElementsManifest: manifest });
+
+    const alphaDecl = manifest.modules[0].declarations[0];
+    const betaDecl = manifest.modules[0].declarations[1];
+
+    expect(alphaDecl.examples).toHaveLength(1);
+    expect(alphaDecl.examples[0].title).toBe("Alpha example");
+    expect(alphaDecl.examples[0].body).toContain("alpha-el");
+
+    expect(betaDecl.examples).toHaveLength(1);
+    expect(betaDecl.examples[0].title).toBe("Beta example");
+    expect(betaDecl.examples[0].body).toContain("beta-el");
+  });
+
   it("does not overwrite existing examples", () => {
     readFileSync.mockReturnValue(`
       /**
@@ -582,7 +686,35 @@ export class TaprootHero extends EspalierElementBase {}
   });
 });
 
-// ── extractExamples ──────────────────────────────────────────────
+// ── extractExamplesFromBlock ─────────────────────────────────────
+
+describe("extractExamplesFromBlock", () => {
+  it("extracts examples from a single JSDoc block", () => {
+    const block = `/**
+ * A component.
+ *
+ * @example Basic usage
+ * \`\`\`html
+ * <my-el>Hello</my-el>
+ * \`\`\`
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Basic usage");
+    expect(result[0].body).toContain("<my-el>Hello</my-el>");
+  });
+
+  it("returns empty array when no @example tags exist", () => {
+    const block = `/**
+ * Just a description.
+ * @param x - something
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toEqual([]);
+  });
+});
+
+// ── extractExamples (declaration-aware) ──────────────────────────
 
 describe("extractExamples", () => {
   it("extracts a single @example with title and html body", () => {
@@ -668,7 +800,51 @@ export class MyEl {}
     expect(result).toEqual([]);
   });
 
-  it("only processes the first JSDoc block with @example", () => {
+  it("scopes to the correct class when declName is provided", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+/**
+ * @example Beta example
+ * \`\`\`html
+ * <beta-el></beta-el>
+ * \`\`\`
+ */
+@customElement("beta-el")
+export class BetaEl extends LitElement {}
+`;
+    const alphaResult = extractExamples(source, "AlphaEl");
+    expect(alphaResult).toHaveLength(1);
+    expect(alphaResult[0].title).toBe("Alpha example");
+
+    const betaResult = extractExamples(source, "BetaEl");
+    expect(betaResult).toHaveLength(1);
+    expect(betaResult[0].title).toBe("Beta example");
+  });
+
+  it("falls back to first JSDoc block when declName is not found", () => {
+    const source = `
+/**
+ * @example Fallback example
+ * \`\`\`html
+ * <my-el></my-el>
+ * \`\`\`
+ */
+class UnrelatedClass {}
+`;
+    const result = extractExamples(source, "NonExistentClass");
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Fallback example");
+  });
+
+  it("falls back when declName is not provided", () => {
     const source = `
 /**
  * @example First block

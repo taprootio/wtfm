@@ -65,7 +65,7 @@ async function renderExampleBlocks(examples, tagName, cemContext) {
 
   if (blocks.length === 0) return "";
 
-  return `\n## Examples\n${blocks.join("\n")}`;
+  return `\n## ${examplesRenderer.heading}\n${blocks.join("\n")}`;
 }
 
 /**
@@ -86,7 +86,7 @@ async function renderDescriptionFallback(decl, cemContext) {
   const encoded = Buffer.from(formatted).toString("base64");
 
   return `
-## Examples
+## ${examplesRenderer.heading}
 
 <wtfm-code-block tag-name="${decl.tagName}" source="${encoded}">
   <script type="application/json">${cemContext.cemJson}</script>

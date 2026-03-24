@@ -41,6 +41,30 @@ export function parseTagValue(value) {
 }
 
 /**
+ * Extracts WTFM doc tags from a specific JSDoc block.
+ *
+ * @param {string}   block     The raw JSDoc comment text (`/** ... *​/`).
+ * @param {string[]} tagNames  Tag names to look for.
+ * @returns {Record<string, { name: string, description: string }> | null}
+ */
+export function extractTagsFromBlock(block, tagNames) {
+  const tags = {};
+
+  for (const tag of tagNames) {
+    const tagPattern = new RegExp(`@${tag}\\s+(.+?)\\s*$`, "m");
+    const tagMatch = block.match(tagPattern);
+    if (tagMatch) {
+      const raw = tagMatch[1].replace(/\s*\*\/?\s*$/, "").trim();
+      if (raw) {
+        tags[tag] = parseTagValue(raw);
+      }
+    }
+  }
+
+  return Object.keys(tags).length > 0 ? tags : null;
+}
+
+/**
  * Extracts WTFM doc tags from JSDoc blocks in source text.
  *
  * Scans every `/** ... *​/` block in the file. Returns the parsed
@@ -56,105 +80,121 @@ export function recoverTagsFromSource(source, tagNames) {
   let match;
 
   while ((match = jsdocPattern.exec(source)) !== null) {
-    const block = match[0];
-    const tags = {};
-
-    for (const tag of tagNames) {
-      // Match @tagName followed by its value until end of line.
-      // The `m` flag makes `$` match each line boundary.
-      const tagPattern = new RegExp(`@${tag}\\s+(.+?)\\s*$`, "m");
-      const tagMatch = block.match(tagPattern);
-      if (tagMatch) {
-        // Strip any trailing JSDoc closing (`*/` or lone `*`).
-        const raw = tagMatch[1].replace(/\s*\*\/?\s*$/, "").trim();
-        if (raw) {
-          tags[tag] = parseTagValue(raw);
-        }
-      }
-    }
-
-    if (Object.keys(tags).length > 0) {
-      return tags;
-    }
+    const result = extractTagsFromBlock(match[0], tagNames);
+    if (result) return result;
   }
 
   return null;
 }
 
 /**
- * Extracts `@example` blocks from a JSDoc comment.
+ * Extracts `@example` blocks from a single JSDoc comment block.
  *
  * Each `@example` tag has an optional title on the same line and a
  * body that typically contains a fenced code block. The body extends
  * until the next `@example`, another `@tag`, or the end of the JSDoc
  * comment.
  *
- * Returns an array of `{ title, body }` objects. Both `title` and
- * `body` are trimmed strings. `title` may be empty if the tag has
- * no inline text.
- *
- * @param {string} source  Full source text of the file.
+ * @param {string} block  A single JSDoc comment (`/** ... *​/`).
  * @returns {Array<{ title: string, body: string }>}
  */
-export function extractExamples(source) {
-  const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
-  let match;
+export function extractExamplesFromBlock(block) {
+  if (!block.includes("@example")) return [];
+
+  const lines = block
+    .replace(/^\/\*\*\s*/, "")
+    .replace(/\s*\*\/\s*$/, "")
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*\s?/, ""));
+
   const examples = [];
+  let currentTitle = null;
+  let currentBody = [];
 
-  while ((match = jsdocPattern.exec(source)) !== null) {
-    const block = match[0];
-    if (!block.includes("@example")) continue;
-
-    // Strip the comment delimiters and leading ` * ` from each line
-    // to get the raw content.
-    const lines = block
-      .replace(/^\/\*\*\s*/, "")
-      .replace(/\s*\*\/\s*$/, "")
-      .split("\n")
-      .map((line) => line.replace(/^\s*\*\s?/, ""));
-
-    let currentTitle = null;
-    let currentBody = [];
-
-    for (const line of lines) {
-      if (line.startsWith("@example")) {
-        // Flush previous example
-        if (currentTitle !== null) {
-          examples.push({
-            title: currentTitle,
-            body: currentBody.join("\n").trim(),
-          });
-        }
-        currentTitle = line.slice("@example".length).trim();
+  for (const line of lines) {
+    if (line.startsWith("@example")) {
+      if (currentTitle !== null) {
+        examples.push({
+          title: currentTitle,
+          body: currentBody.join("\n").trim(),
+        });
+      }
+      currentTitle = line.slice("@example".length).trim();
+      currentBody = [];
+    } else if (currentTitle !== null) {
+      if (/^@\w/.test(line)) {
+        examples.push({
+          title: currentTitle,
+          body: currentBody.join("\n").trim(),
+        });
+        currentTitle = null;
         currentBody = [];
-      } else if (currentTitle !== null) {
-        // If we hit another JSDoc tag, flush and stop collecting
-        if (/^@\w/.test(line)) {
-          examples.push({
-            title: currentTitle,
-            body: currentBody.join("\n").trim(),
-          });
-          currentTitle = null;
-          currentBody = [];
-        } else {
-          currentBody.push(line);
-        }
+      } else {
+        currentBody.push(line);
       }
     }
+  }
 
-    // Flush last example in the block
-    if (currentTitle !== null) {
-      examples.push({
-        title: currentTitle,
-        body: currentBody.join("\n").trim(),
-      });
-    }
-
-    // Only process the first JSDoc block that has examples
-    if (examples.length > 0) break;
+  if (currentTitle !== null) {
+    examples.push({
+      title: currentTitle,
+      body: currentBody.join("\n").trim(),
+    });
   }
 
   return examples;
+}
+
+/**
+ * Extracts `@example` blocks from source text, scoped to a specific
+ * declaration. Finds the JSDoc block that immediately precedes the
+ * class declaration for the given name and extracts examples from it.
+ *
+ * Falls back to scanning all JSDoc blocks if the declaration-specific
+ * search fails (e.g. for unusual source layouts).
+ *
+ * @param {string} source    Full source text of the file.
+ * @param {string} declName  The class name to match (e.g. "TaprootHero").
+ * @returns {Array<{ title: string, body: string }>}
+ */
+export function extractExamples(source, declName) {
+  // Strategy 1: Find `class DeclName` and look backwards for the nearest
+  // JSDoc block. This correctly scopes examples when a file contains
+  // multiple declarations with their own JSDoc blocks.
+  if (declName) {
+    const escapedName = declName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const classPattern = new RegExp(`class\\s+${escapedName}\\b`);
+    const classMatch = classPattern.exec(source);
+
+    if (classMatch) {
+      // Search the text before the class for all JSDoc blocks, take the last one.
+      const textBefore = source.slice(0, classMatch.index);
+      const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
+      let lastBlock = null;
+      let blockMatch;
+
+      while ((blockMatch = jsdocPattern.exec(textBefore)) !== null) {
+        lastBlock = blockMatch[0];
+      }
+
+      if (lastBlock) {
+        const examples = extractExamplesFromBlock(lastBlock);
+        if (examples.length > 0) return examples;
+      }
+    }
+  }
+
+  // Strategy 2: Fall back to scanning all JSDoc blocks and returning
+  // the first one that contains @example tags.
+  const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
+  let blockMatch;
+
+  while ((blockMatch = jsdocPattern.exec(source)) !== null) {
+    const examples = extractExamplesFromBlock(blockMatch[0]);
+    if (examples.length > 0) return examples;
+  }
+
+  return [];
 }
 
 /**
@@ -184,6 +224,11 @@ export function extractExamples(source) {
  *
  * The plugin also extracts `@example` JSDoc blocks from source files
  * for all custom-element declarations (not just those missing tags).
+ * Examples are scoped to the specific declaration — the plugin finds
+ * the JSDoc block that precedes each class by name. This prevents
+ * examples from being misattributed when a module contains multiple
+ * custom-element declarations.
+ *
  * Each `@example` block is parsed into a `{ title, body }` object
  * where `title` is the text on the `@example` line and `body` is
  * the content (typically a fenced code block). These are stored in
@@ -216,22 +261,37 @@ export default function wtfmCemPlugin(options = {}) {
     name: "wtfm-cem-plugin",
 
     packageLinkPhase({ customElementsManifest }) {
+      // Cache source file contents per module path to avoid redundant I/O
+      // when a module contains multiple custom-element declarations.
+      const sourceCache = new Map();
+
       for (const mod of customElementsManifest.modules) {
-        // Only look at custom-element class declarations.
         const ceDecls = (mod.declarations || []).filter(
           (d) => d.customElement || d.tagName,
         );
 
+        if (ceDecls.length === 0) continue;
+
+        // Read the source file once per module.
+        let source;
+        const filePath = resolve(mod.path);
+        if (sourceCache.has(filePath)) {
+          source = sourceCache.get(filePath);
+        } else {
+          try {
+            source = readFileSync(filePath, "utf-8");
+          } catch {
+            sourceCache.set(filePath, null);
+            continue;
+          }
+          sourceCache.set(filePath, source);
+        }
+
+        if (!source) continue;
+
         for (const decl of ceDecls) {
           // ── Recover missing doc tags ──────────────────────────
           const needsTagRecovery = !tagNames.some((t) => decl[t]);
-
-          let source;
-          try {
-            source = readFileSync(resolve(mod.path), "utf-8");
-          } catch {
-            continue;
-          }
 
           if (needsTagRecovery) {
             const recovered = recoverTagsFromSource(source, tagNames);
@@ -240,9 +300,9 @@ export default function wtfmCemPlugin(options = {}) {
             }
           }
 
-          // ── Extract @example blocks ───────────────────────────
+          // ── Extract @example blocks scoped to this declaration ─
           if (!decl.examples || decl.examples.length === 0) {
-            const examples = extractExamples(source);
+            const examples = extractExamples(source, decl.name);
             if (examples.length > 0) {
               decl.examples = examples;
             }
