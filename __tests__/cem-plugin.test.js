@@ -712,6 +712,38 @@ describe("extractExamplesFromBlock", () => {
     const result = extractExamplesFromBlock(block);
     expect(result).toEqual([]);
   });
+
+  it("handles extra whitespace after the leading *", () => {
+    const block = `/**
+ *   @example Indented example
+ *   \`\`\`html
+ *   <my-el></my-el>
+ *   \`\`\`
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Indented example");
+    expect(result[0].body).toContain("<my-el>");
+  });
+
+  it("preserves @-rules inside fenced code blocks", () => {
+    const block = `/**
+ * @example With CSS @media
+ * \`\`\`html
+ * <style>
+ *   @media (max-width: 48em) {
+ *     .hero { flex-direction: column; }
+ *   }
+ * </style>
+ * <my-el></my-el>
+ * \`\`\`
+ */`;
+    const result = extractExamplesFromBlock(block);
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("With CSS @media");
+    expect(result[0].body).toContain("@media");
+    expect(result[0].body).toContain("<my-el>");
+  });
 });
 
 // ── extractExamples (declaration-aware) ──────────────────────────

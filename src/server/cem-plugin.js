@@ -101,18 +101,28 @@ export function recoverTagsFromSource(source, tagNames) {
 export function extractExamplesFromBlock(block) {
   if (!block.includes("@example")) return [];
 
+  // Strip comment delimiters and the leading `*` plus all following
+  // whitespace from each line. Using `\s*` (not `\s?`) ensures
+  // blocks indented with multiple spaces are handled correctly.
   const lines = block
     .replace(/^\/\*\*\s*/, "")
     .replace(/\s*\*\/\s*$/, "")
     .split("\n")
-    .map((line) => line.replace(/^\s*\*\s?/, ""));
+    .map((line) => line.replace(/^\s*\*\s*/, ""));
 
   const examples = [];
   let currentTitle = null;
   let currentBody = [];
+  let inFence = false;
 
   for (const line of lines) {
-    if (line.startsWith("@example")) {
+    // Track fenced code blocks so `@` inside code (e.g. @media,
+    // @supports) is not mistaken for a JSDoc tag boundary.
+    if (line.startsWith("```")) {
+      inFence = !inFence;
+    }
+
+    if (!inFence && line.startsWith("@example")) {
       if (currentTitle !== null) {
         examples.push({
           title: currentTitle,
@@ -122,7 +132,7 @@ export function extractExamplesFromBlock(block) {
       currentTitle = line.slice("@example".length).trim();
       currentBody = [];
     } else if (currentTitle !== null) {
-      if (/^@\w/.test(line)) {
+      if (!inFence && /^@\w/.test(line)) {
         examples.push({
           title: currentTitle,
           body: currentBody.join("\n").trim(),

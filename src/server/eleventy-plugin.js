@@ -433,16 +433,22 @@ type ${decl.name} = ${decl.type.text}
       sectionKeys = kindDefaults;
     } else {
       // Resolve aliases so abbreviations like "cssprops" work
-      // consistently in both inclusions and exclusions.
-      const resolveAlias = (key) => KEY_ALIASES[key] ?? key;
+      // consistently. Exclusions always resolve to canonical form
+      // because kindDefaults uses canonical keys. Inclusions only
+      // resolve when the key isn't already a registered renderer —
+      // so a custom renderer registered under the alias name is
+      // not bypassed.
+      const toCanonical = (key) => KEY_ALIASES[key] ?? key;
+      const resolveInclusion = (key) =>
+        rendererMap.has(key) ? key : toCanonical(key);
 
       const hasAll = docSections.includes("all");
       const exclusions = docSections
         .filter((s) => s.startsWith("-"))
-        .map((s) => resolveAlias(s.substring(1)));
+        .map((s) => toCanonical(s.substring(1)));
       const inclusions = docSections
         .filter((s) => s !== "all" && !s.startsWith("-"))
-        .map(resolveAlias);
+        .map(resolveInclusion);
 
       if (hasAll || inclusions.length === 0) {
         sectionKeys = kindDefaults.filter(
