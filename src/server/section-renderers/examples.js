@@ -66,7 +66,7 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext) {
 
   if (blocks.length === 0) return "";
 
-  return `\n## ${heading}\n${blocks.join("\n")}`;
+  return `\n## ${heading}\n\n${blocks.join("\n")}`;
 }
 
 /**
