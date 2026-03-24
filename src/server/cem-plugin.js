@@ -162,40 +162,50 @@ export function extractExamplesFromBlock(block) {
  *
  * Falls back to scanning all JSDoc blocks only when `declName` is not
  * provided or the class is not found in the source. When the class is
- * found, only its own JSDoc is checked — this prevents misattribution.
+ * found, only its directly adjacent JSDoc is checked (allowing only
+ * whitespace, decorators, and export/default between the comment and
+ * the class keyword) — this prevents misattribution.
  *
  * @param {string} source    Full source text of the file.
  * @param {string} declName  The class name to match (e.g. "TaprootHero").
  * @returns {Array<{ title: string, body: string }>}
  */
 export function extractExamples(source, declName) {
-  // Strategy 1: Find `class DeclName` and look backwards for the nearest
-  // JSDoc block. This correctly scopes examples when a file contains
-  // multiple declarations with their own JSDoc blocks.
+  // Strategy 1: Find the JSDoc block that is directly associated with
+  // `class DeclName`. The block must end immediately before the class,
+  // with only whitespace, decorators (@customElement(...) etc.), and
+  // export/default keywords allowed in between. This prevents grabbing
+  // a JSDoc block from a different declaration earlier in the file.
   if (declName) {
     const escapedName = declName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const classPattern = new RegExp(`class\\s+${escapedName}\\b`);
     const classMatch = classPattern.exec(source);
 
     if (classMatch) {
-      // Search the text before the class for all JSDoc blocks, take the last one.
+      // Look backwards from the class keyword for the nearest JSDoc block.
       const textBefore = source.slice(0, classMatch.index);
       const jsdocPattern = /\/\*\*[\s\S]*?\*\//g;
       let lastBlock = null;
+      let lastBlockEnd = -1;
       let blockMatch;
 
       while ((blockMatch = jsdocPattern.exec(textBefore)) !== null) {
         lastBlock = blockMatch[0];
+        lastBlockEnd = blockMatch.index + blockMatch[0].length;
       }
 
-      // We found the class and its JSDoc — return whatever examples it has
-      // (possibly empty). Do NOT fall through to the global scan, as that
-      // could misattribute examples from another declaration's JSDoc.
-      if (lastBlock) {
-        return extractExamplesFromBlock(lastBlock);
+      // Verify the JSDoc is directly adjacent: the text between the
+      // end of the JSDoc and the class keyword must contain only
+      // whitespace, decorators, and export/default — no statement
+      // terminators (} or ;) that indicate intervening code.
+      if (lastBlock && lastBlockEnd >= 0) {
+        const gap = textBefore.slice(lastBlockEnd);
+        if (!/[};]/.test(gap)) {
+          return extractExamplesFromBlock(lastBlock);
+        }
       }
 
-      // Class found but no preceding JSDoc block at all.
+      // Class found but no adjacent JSDoc — return empty.
       return [];
     }
   }

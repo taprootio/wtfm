@@ -951,4 +951,31 @@ export class BareEl extends LitElement {}
     const result = extractExamples(source, "BareEl");
     expect(result).toEqual([]);
   });
+
+  it("does not grab a distant JSDoc from another class (adjacency check)", () => {
+    const source = `
+/**
+ * @example Alpha example
+ * \`\`\`html
+ * <alpha-el></alpha-el>
+ * \`\`\`
+ */
+@customElement("alpha-el")
+export class AlphaEl extends LitElement {}
+
+// Some unrelated code
+const x = 42;
+
+@customElement("gamma-el")
+export class GammaEl extends LitElement {}
+`;
+    // GammaEl has no JSDoc at all — should not pick up AlphaEl's examples
+    const gammaResult = extractExamples(source, "GammaEl");
+    expect(gammaResult).toEqual([]);
+
+    // AlphaEl's examples should still work
+    const alphaResult = extractExamples(source, "AlphaEl");
+    expect(alphaResult).toHaveLength(1);
+    expect(alphaResult[0].title).toBe("Alpha example");
+  });
 });
