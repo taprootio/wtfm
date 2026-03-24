@@ -219,13 +219,15 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
   }
 
   // Resolve the default section order (for component declarations).
-  // Canonicalize any alias keys so exclusions (e.g. `-cssprops`)
-  // work correctly against the defaults list.
+  // Canonicalize alias keys so exclusions (e.g. `-cssprops`) work
+  // against the defaults list — but only when the alias key isn't
+  // itself a registered renderer (a custom renderer registered under
+  // the alias name should be preserved).
   const rawSectionOrder = sections
     ? sections.map((s) => (typeof s === "string" ? s : s.key))
     : defaultRenderers.map((r) => r.key);
-  const defaultSectionOrder = rawSectionOrder.map(
-    (k) => KEY_ALIASES[k] ?? k,
+  const defaultSectionOrder = rawSectionOrder.map((k) =>
+    rendererMap.has(k) ? k : (KEY_ALIASES[k] ?? k),
   );
 
   // ── Load the Custom Elements Manifest ────────────────────────
