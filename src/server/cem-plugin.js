@@ -336,8 +336,10 @@ export default function wtfmCemPlugin(options = {}) {
 
         if (!source) continue;
 
-        // Build a per-module cache of className → examples so we scan
-        // the source once for all declarations instead of once per decl.
+        // Cache className → examples within a module. This avoids
+        // redundant work if the same class name appears more than once
+        // (unusual but possible). Each unique name still requires its
+        // own extractExamples() call since extraction is class-scoped.
         const examplesCache = new Map();
 
         for (const decl of ceDecls) {
