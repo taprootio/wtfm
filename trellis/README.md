@@ -7,10 +7,4 @@ generated; do not hand-edit between the markers — edit the per-item files in
 
 <!-- BEGIN GENERATED:MILESTONES -->
 
-### Alpha
-
-| ID | Title | Owner | Priority | Effort |
-| --- | --- | --- | --- | --- |
-| [WTFM0002](active/WTFM0002.md) | Switch npm publishing to Trusted Publishing (OIDC) | jereme | High | 2 |
-
 <!-- END GENERATED:MILESTONES -->
