@@ -1,6 +1,7 @@
 import { buildDocSection } from "./build-doc-section.js";
 import { buildCemContext } from "./build-cem-context.js";
 import { resolveIntro } from "./resolve-intro.js";
+import { renderAnchoredHeading } from "../anchors.js";
 
 export const eventsRenderer = {
   key: "events",
@@ -11,7 +12,7 @@ export const eventsRenderer = {
 
     const introText = resolveIntro(this.intro, decl.tagName, decl.events.length);
     const cemContext = buildCemContext(decl, options);
-    let result = `\n## ${this.heading}\n\n${introText}\n\n`;
+    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const event of decl.events) {
       result += await buildDocSection(
@@ -19,6 +20,7 @@ export const eventsRenderer = {
         event.description,
         `\`${event.name}\` is of type \`${event.type?.text || ""}\`.`,
         cemContext,
+        { prefix: options.anchorPrefix, override: event.helpAnchor },
       );
     }
     return result;

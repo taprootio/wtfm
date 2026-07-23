@@ -9,8 +9,8 @@
   ],
   "nextId": "WTFM0009",
   "counts": {
-    "active": 6,
-    "completed": 2,
+    "active": 5,
+    "completed": 3,
     "removed": 0
   },
   "tasks": [
@@ -31,18 +31,6 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
-    },
-    {
-      "id": "WTFM0004",
-      "title": "Emit stable heading anchors across rendered docs",
-      "status": "active",
-      "milestone": "Help & Docs Surfaces",
-      "priority": "High",
-      "effort": 5,
-      "depends_on": [],
-      "owner": "jereme",
-      "collaborators": [],
-      "summary": "Give every rendered heading a deterministic, collision-safe id — namespaced on composed surfaces and exactly overridable from Markdown or CEM metadata — so reference docs remain stable and authored help anchors can match Espalier field-names."
     },
     {
       "id": "WTFM0005",
@@ -126,6 +114,19 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Configure npm Trusted Publishing so the publish workflow authenticates via GitHub Actions OIDC, then retire the short-lived NPM_TOKEN secret entirely.",
+      "completed_on": "2026-07-23"
+    },
+    {
+      "id": "WTFM0004",
+      "title": "Emit stable heading anchors across rendered docs",
+      "status": "completed",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "High",
+      "effort": 5,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Give every rendered heading a deterministic, collision-safe id — namespaced on composed surfaces and exactly overridable from Markdown or CEM metadata — so reference docs remain stable and authored help anchors can match Espalier field-names.",
       "completed_on": "2026-07-23"
     }
   ]

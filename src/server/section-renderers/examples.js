@@ -1,5 +1,6 @@
 import * as prettier from "prettier";
 import { buildCemContext } from "./build-cem-context.js";
+import { renderAnchoredHeading } from "../anchors.js";
 
 /**
  * Section renderer that emits interactive `<wtfm-code-block>` elements
@@ -29,7 +30,13 @@ export const examplesRenderer = {
     if (!decl.examples?.length) return "";
 
     const cemContext = buildCemContext(decl, options);
-    return renderExampleBlocks(decl.examples, decl.tagName, this.heading, cemContext);
+    return renderExampleBlocks(
+      decl.examples,
+      decl.tagName,
+      this.heading,
+      cemContext,
+      options,
+    );
   },
 };
 
@@ -40,9 +47,10 @@ export const examplesRenderer = {
  * @param {string} tagName
  * @param {string} heading  Section heading (from the renderer instance).
  * @param {object} cemContext
+ * @param {object} options
  * @returns {Promise<string>}
  */
-async function renderExampleBlocks(examples, tagName, heading, cemContext) {
+async function renderExampleBlocks(examples, tagName, heading, cemContext, options = {}) {
   const blocks = [];
 
   for (const example of examples) {
@@ -55,7 +63,10 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext) {
 
     let block = "";
     if (title) {
-      block += `\n### ${title}\n\n`;
+      block += `\n${renderAnchoredHeading(3, title, {
+        prefix: options.anchorPrefix,
+        override: example.helpAnchor,
+      })}\n\n`;
     }
     block += `<wtfm-code-block tag-name="${tagName}" source="${encoded}">
   <script type="application/json">${cemContext.cemJson}</script>
@@ -66,7 +77,9 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext) {
 
   if (blocks.length === 0) return "";
 
-  return `\n## ${heading}\n\n${blocks.join("\n")}`;
+  return `\n${renderAnchoredHeading(2, heading, {
+    prefix: options.anchorPrefix,
+  })}\n\n${blocks.join("\n")}`;
 }
 
 /**

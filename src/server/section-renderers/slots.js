@@ -1,6 +1,7 @@
 import { buildDocSection } from "./build-doc-section.js";
 import { buildCemContext } from "./build-cem-context.js";
 import { resolveIntro } from "./resolve-intro.js";
+import { renderAnchoredHeading } from "../anchors.js";
 
 export const slotsRenderer = {
   key: "slots",
@@ -14,7 +15,7 @@ export const slotsRenderer = {
 
     const introText = resolveIntro(this.intro, decl.tagName, decl.slots.length);
     const cemContext = buildCemContext(decl, options);
-    let result = `\n## ${this.heading}\n\n${introText}\n\n`;
+    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const slot of decl.slots) {
       result += await buildDocSection(
@@ -22,6 +23,7 @@ export const slotsRenderer = {
         slot.description,
         "",
         cemContext,
+        { prefix: options.anchorPrefix, override: slot.helpAnchor },
       );
     }
     return result;

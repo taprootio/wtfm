@@ -8,4 +8,5 @@ a task and regenerate (`npx @taprootio/trellis generate`).
 | --- | --- | --- | --- |
 | [WTFM0001](tasks/WTFM0001.md) | Publish @taprootio/wtfm to the public npm registry | Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth; ship 0.13.0 as the first public release. | 2026-07-23 |
 | [WTFM0002](tasks/WTFM0002.md) | Switch npm publishing to Trusted Publishing (OIDC) | Configure npm Trusted Publishing so the publish workflow authenticates via GitHub Actions OIDC, then retire the short-lived NPM_TOKEN secret entirely. | 2026-07-23 |
+| [WTFM0004](tasks/WTFM0004.md) | Emit stable heading anchors across rendered docs | Give every rendered heading a deterministic, collision-safe id — namespaced on composed surfaces and exactly overridable from Markdown or CEM metadata — so reference docs remain stable and authored help anchors can match Espalier field-names. | 2026-07-23 |
 <!-- END GENERATED:COMPLETED -->

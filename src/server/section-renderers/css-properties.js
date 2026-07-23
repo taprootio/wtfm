@@ -1,6 +1,7 @@
 import { buildDocSection } from "./build-doc-section.js";
 import { buildCemContext } from "./build-cem-context.js";
 import { resolveIntro } from "./resolve-intro.js";
+import { renderAnchoredHeading } from "../anchors.js";
 
 export const cssPropertiesRenderer = {
   key: "css-properties",
@@ -15,10 +16,13 @@ export const cssPropertiesRenderer = {
       decl.cssProperties.length,
     );
     const cemContext = buildCemContext(decl, options);
-    let result = `\n## ${this.heading}\n\n${introText}\n\n`;
+    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const prop of decl.cssProperties) {
-      result += await buildDocSection(prop.name, prop.description, "", cemContext);
+      result += await buildDocSection(prop.name, prop.description, "", cemContext, {
+        prefix: options.anchorPrefix,
+        override: prop.helpAnchor,
+      });
     }
     return result;
   },

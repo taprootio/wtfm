@@ -1,4 +1,5 @@
 import * as prettier from "prettier";
+import { renderAnchoredHeading } from "../anchors.js";
 
 /**
  * Builds a CEM metadata JSON string for embedding in a
@@ -26,9 +27,18 @@ function buildCemScript(cemContext) {
  * @param {object|null} [cemContext] - Optional CEM metadata for interactive code blocks
  * @param {string} cemContext.tagName - The custom element tag name
  * @param {string} cemContext.cemJson - Pre-serialised CEM JSON string
+ * @param {object} [anchorOptions] - Stable heading anchor options
+ * @param {string} [anchorOptions.prefix] - Namespace for generated ids
+ * @param {object|string} [anchorOptions.override] - Exact @helpAnchor value
  * @returns {Promise<string>} Formatted markdown string
  */
-export async function buildDocSection(title, description, postDescription, cemContext = null) {
+export async function buildDocSection(
+  title,
+  description,
+  postDescription,
+  cemContext = null,
+  anchorOptions = {},
+) {
   if (!description) {
     console.warn({
       message: "No description",
@@ -72,7 +82,7 @@ export async function buildDocSection(title, description, postDescription, cemCo
   let result = `
 <div class="doc-section">
 
-### ${title}
+${renderAnchoredHeading(3, title, anchorOptions)}
 
 ${postDescription}
 

@@ -1,4 +1,12 @@
 export { buildDocSection } from "./build-doc-section.js";
+export {
+  configureMarkdownAnchors,
+  renderAnchoredHeading,
+  resolveAnchorId,
+  slugifyAnchor,
+  tagValue,
+  validateAnchorId,
+} from "../anchors.js";
 export { buildCemContext } from "./build-cem-context.js";
 export { resolveIntro } from "./resolve-intro.js";
 export { slotsRenderer } from "./slots.js";

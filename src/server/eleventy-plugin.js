@@ -9,6 +9,7 @@ import {
   defaultTypeSections,
 } from "./section-renderers/index.js";
 import { buildCemContext } from "./section-renderers/build-cem-context.js";
+import { configureMarkdownAnchors } from "./anchors.js";
 
 /**
  * Reads the @docSections tag from a CEM declaration and returns
@@ -264,7 +265,7 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     breaks: false,
     linkify: true,
   };
-  const markdownLib = markdownIt(mdOptions).use(mathjax3);
+  const markdownLib = configureMarkdownAnchors(markdownIt(mdOptions).use(mathjax3));
   eleventyConfig.setLibrary("md", markdownLib);
 
   // ── Markdown filter for JS templates ────────────────────────

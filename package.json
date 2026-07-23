@@ -24,6 +24,10 @@
       "types": "./dist/server/section-renderers/*.d.ts",
       "default": "./dist/server/section-renderers/*.js"
     },
+    "./anchors": {
+      "types": "./dist/server/anchors.d.ts",
+      "default": "./dist/server/anchors.js"
+    },
     "./data/components": {
       "types": "./dist/server/data/components.d.ts",
       "default": "./dist/server/data/components.js"
@@ -84,6 +88,8 @@
   "license": "ISC",
   "dependencies": {
     "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.1",
+    "markdown-it-attrs": "^5.0.0",
     "markdown-it-mathjax3": "^5.2.0",
     "prettier": "^3.6.2",
     "shiki": "^3.13.0"

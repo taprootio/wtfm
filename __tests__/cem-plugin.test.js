@@ -166,6 +166,19 @@ export class MyButton extends LitElement {}
     expect(result).not.toBeNull();
     expect(result.docUrl.name).toBe("/components/foo");
   });
+
+  it("recovers an exact helpAnchor value", () => {
+    const source = `
+/**
+ * Help for the title field.
+ * @helpAnchor Title
+ */
+export class TitleField {}
+`;
+    expect(recoverTagsFromSource(source, ["helpAnchor"])).toEqual({
+      helpAnchor: { name: "Title", description: "" },
+    });
+  });
 });
 
 // ── wtfmCemPlugin (full integration) ─────────────────────────────
