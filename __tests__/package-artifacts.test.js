@@ -15,7 +15,7 @@ let packedFiles;
 beforeAll(async () => {
   const npmCacheRoot = await mkdtemp(path.join(tmpdir(), "wtfm-npm-cache-"));
   temporaryDirectories.push(npmCacheRoot);
-  await execFileAsync("npm", ["run", "build:server"], { cwd: repositoryRoot });
+  await execFileAsync("npm", ["run", "build"], { cwd: repositoryRoot });
   packageJson = JSON.parse(
     await readFile(path.join(repositoryRoot, "package.json"), "utf-8"),
   );
@@ -37,7 +37,7 @@ afterAll(async () => {
   );
 });
 
-describe("published server package", () => {
+describe("published package", () => {
   it("packs every declared concrete type target and executable", () => {
     for (const target of Object.values(packageJson.exports)) {
       if (!target.types || target.types.includes("*")) continue;
