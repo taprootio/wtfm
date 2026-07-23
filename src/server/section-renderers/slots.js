@@ -28,6 +28,7 @@ export const slotsRenderer = {
           prefix: options.anchorPrefix,
           override: slot.helpAnchor,
           level: 3 + headingOffset,
+          pathPrefix: options.pathPrefix,
         },
       );
     }

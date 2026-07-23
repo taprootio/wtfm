@@ -1,5 +1,6 @@
 import * as prettier from "prettier";
 import { renderAnchoredHeading } from "../anchors.js";
+import { applyPathPrefixToHtml } from "../urls.js";
 
 /**
  * Builds a CEM metadata JSON string for embedding in a
@@ -31,6 +32,7 @@ function buildCemScript(cemContext) {
  * @param {string} [anchorOptions.prefix] - Namespace for generated ids
  * @param {object|string} [anchorOptions.override] - Exact @helpAnchor value
  * @param {number} [anchorOptions.level=3] - Heading level for this item
+ * @param {string} [anchorOptions.pathPrefix="/"] - Deployment prefix for demo URLs
  * @returns {Promise<string>} Formatted markdown string
  */
 export async function buildDocSection(
@@ -49,7 +51,11 @@ export async function buildDocSection(
     return "";
   }
 
-  const { level = 3, ...resolvedAnchorOptions } = anchorOptions;
+  const {
+    level = 3,
+    pathPrefix = cemContext?.pathPrefix || "/",
+    ...resolvedAnchorOptions
+  } = anchorOptions;
   const descriptionParts = [];
 
   let htmlIndex = description.indexOf("```html");
@@ -109,9 +115,10 @@ ${part.v}
         // Encode the HTML as base64 so markdown-it cannot
         // corrupt content inside <script> or <style> blocks
         // (e.g. indented JS being treated as a code fence).
+        const prefixedHtml = await applyPathPrefixToHtml(part.v.trim(), pathPrefix);
         result += `
 
-<wtfm-code-block${tagAttr} source="${Buffer.from(part.v.trim()).toString("base64")}">${cemScript}
+<wtfm-code-block${tagAttr} source="${Buffer.from(prefixedHtml).toString("base64")}">${cemScript}
 </wtfm-code-block>
 `;
         break;

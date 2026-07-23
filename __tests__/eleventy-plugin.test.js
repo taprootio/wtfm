@@ -299,6 +299,27 @@ describe("wtfmPlugin", () => {
       expect(decoded).not.toContain("<code>");
     });
 
+    it("prefixes root-absolute URLs inside encoded description demos", async () => {
+      const cemWithAsset = {
+        modules: [{
+          declarations: [{
+            name: "AssetWidget",
+            tagName: "asset-widget",
+            description: '```html\n<img src="/assets/demo.png">\n```',
+          }],
+        }],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(cemWithAsset));
+      const config = createMockEleventyConfig();
+      config.pathPrefix = "/help/";
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+
+      const result = await config.shortcodes.renderDocs("AssetWidget");
+      const match = result.match(/source="([A-Za-z0-9+/=]+)"/);
+      const decoded = Buffer.from(match[1], "base64").toString();
+      expect(decoded).toContain('src="/help/assets/demo.png"');
+    });
+
     it("preserves formnovalidate in code-block source and escapes closing script tags in CEM JSON", async () => {
       const cemWithForm = {
         modules: [
@@ -688,6 +709,7 @@ describe("wtfmPlugin", () => {
               name: "SurfacePanel",
               tagName: "surface-panel",
               description: "Panel docs.",
+              helpAnchor: { name: "PanelExact" },
               attributes: [{
                 name: "label",
                 description: "Panel label.",
@@ -724,6 +746,7 @@ describe("wtfmPlugin", () => {
         result.indexOf("`<surface-panel>`"),
       );
       expect(result).toContain("## `<surface-shell>` {#surface-shell}");
+      expect(result).toContain("## `<surface-panel>` {#PanelExact}");
       expect(result).toContain("### Attributes {#surface-shell--attributes}");
       expect(result).toContain("#### heading {#ShellHeading}");
       expect(result).toContain("### Attributes {#surface-panel--attributes}");

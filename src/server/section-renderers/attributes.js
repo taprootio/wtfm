@@ -34,6 +34,7 @@ export const attributesRenderer = {
           prefix: options.anchorPrefix,
           override: attr.helpAnchor,
           level: 3 + headingOffset,
+          pathPrefix: options.pathPrefix,
         },
       );
     }

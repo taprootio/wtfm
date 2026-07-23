@@ -86,6 +86,11 @@ describe("Eleventy path-prefix fixture", () => {
   it("emits the versioned final surface and anchor manifest", async () => {
     const output = await buildFixture("/help/");
     expect(output.surfaceReference).toContain('id="surface-shell--attributes"');
+    const source = output.surfaceReference.match(/source="([A-Za-z0-9+/=]+)"/);
+    expect(source).not.toBeNull();
+    expect(Buffer.from(source[1], "base64").toString()).toContain(
+      'src="/help/assets/demo.png"',
+    );
     expect(output.surfaceHelp).toContain('<h2 id="Title">Title</h2>');
     expect(output.helpManifest).toEqual({
       schemaVersion: 1,

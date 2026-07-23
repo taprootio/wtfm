@@ -24,6 +24,7 @@ export const cssPropertiesRenderer = {
         prefix: options.anchorPrefix,
         override: prop.helpAnchor,
         level: 3 + headingOffset,
+        pathPrefix: options.pathPrefix,
       });
     }
     return result;

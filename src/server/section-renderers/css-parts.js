@@ -27,6 +27,7 @@ export const cssPartsRenderer = {
         prefix: options.anchorPrefix,
         override: part.helpAnchor,
         level: 3 + headingOffset,
+        pathPrefix: options.pathPrefix,
       });
     }
     return result;

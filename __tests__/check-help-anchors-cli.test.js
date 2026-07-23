@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { execFile } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -66,6 +66,18 @@ describe("wtfm-check-help-anchors CLI", () => {
     await expect(execFileAsync(process.execPath, [cliPath, ...paths])).rejects.toMatchObject({
       code: 1,
       stderr: expect.stringContaining('missing expected anchor "Title"'),
+    });
+  });
+
+  it("runs through an npm-style executable symlink", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "wtfm-anchor-cli-link-"));
+    temporaryDirectories.push(dir);
+    const linkedCli = path.join(dir, "wtfm-check-help-anchors");
+    await symlink(cliPath, linkedCli);
+
+    await expect(execFileAsync(process.execPath, [linkedCli])).rejects.toMatchObject({
+      code: 2,
+      stderr: expect.stringContaining("Usage:"),
     });
   });
 

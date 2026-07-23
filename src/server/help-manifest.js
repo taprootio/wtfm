@@ -1,4 +1,6 @@
-import { normalizeUrlPrefix, toRootAbsoluteUrl } from "./urls.js";
+import { applyPathPrefix, toRootAbsoluteUrl } from "./urls.js";
+
+export { applyPathPrefix } from "./urls.js";
 
 export const HELP_MANIFEST_SCHEMA_VERSION = 1;
 
@@ -13,26 +15,6 @@ function normalizePageUrl(value) {
 }
 
 /**
- * Apply Eleventy's configured path prefix to an internal final page URL.
- *
- * @param {string} value
- * @param {string} [pathPrefix="/"]
- * @returns {string}
- */
-export function applyPathPrefix(value, pathPrefix = "/") {
-  const url = toRootAbsoluteUrl(value);
-  if (!url || url.startsWith("#") || url.startsWith("//") || /^[a-z][a-z\d+.-]*:/iu.test(url)) {
-    return url;
-  }
-
-  const prefix = normalizeUrlPrefix(pathPrefix);
-  if (prefix === "/") return url;
-  const parsed = new URL(url, "https://wtfm.invalid");
-  const pathname = `${prefix.replace(/\/$/u, "")}/${parsed.pathname.replace(/^\//u, "")}`;
-  return `${pathname}${parsed.search}${parsed.hash}`;
-}
-
-/**
  * Extract ordered heading ids from final HTML and reject duplicates.
  *
  * @param {string} html
@@ -42,11 +24,11 @@ export function applyPathPrefix(value, pathPrefix = "/") {
 export function extractHelpHeadingIds(html, context = "help document") {
   const ids = [];
   const seen = new Set();
-  const headingPattern = /<h[1-6]\b[^>]*\bid=(?:"([^"]+)"|'([^']+)')[^>]*>/giu;
+  const headingPattern = /<h[1-6]\b[^>]*?\s+id\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))[^>]*>/giu;
   let match;
 
   while ((match = headingPattern.exec(String(html ?? ""))) !== null) {
-    const id = match[1] ?? match[2];
+    const id = match[1] ?? match[2] ?? match[3];
     if (seen.has(id)) {
       throw new Error(
         `wtfm: Duplicate help heading id "${id}" in ${context}.`,

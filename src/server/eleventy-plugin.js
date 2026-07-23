@@ -14,6 +14,7 @@ import { configureMarkdownAnchors, renderAnchoredHeading } from "./anchors.js";
 import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
 import { buildHelpManifest } from "./help-manifest.js";
+import { applyPathPrefixToHtml } from "./urls.js";
 
 /**
  * Reads the @docSections tag from a CEM declaration and returns
@@ -103,6 +104,7 @@ function buildFunctionSignature(decl) {
  * ## Global data
  *
  * - **`customElements`** — the parsed Custom Elements Manifest object.
+ * - **`docSurfaces`** — validated documentation surfaces from the CEM.
  * - **`typeManifest`** — the parsed type manifest object (when provided).
  *
  * @param {object} eleventyConfig - The Eleventy configuration object
@@ -151,6 +153,11 @@ function buildFunctionSignature(decl) {
  *   link is generated.
  *
  *   Signature: `(url: string) => string`
+ *
+ * @param {(slug: string, surface: object) => string}
+ *   [options.referenceUrlBuilder] - Optional surface reference route builder.
+ * @param {(slug: string, surface: object) => string}
+ *   [options.helpUrlBuilder] - Optional surface help route builder.
  *
  * @param {(string|{key: string})[]} [options.sections] - Array of
  *   section keys (or objects with a `key` property) defining the
@@ -204,6 +211,7 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     attributeExceptions,
     assetsDir,
     githubLinkTemplate,
+    pathPrefix: eleventyConfig.pathPrefix || "/",
   };
   const pathPrefix = eleventyConfig.pathPrefix || "/";
 
@@ -388,7 +396,11 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
         // Encode the HTML as base64 so markdown-it cannot corrupt
         // content inside <script> or <style> blocks (e.g. indented
         // JS being treated as a markdown code fence).
-        const encoded = Buffer.from(formattedHtml.trim()).toString("base64");
+        const prefixedHtml = await applyPathPrefixToHtml(
+          formattedHtml.trim(),
+          resolvedOptions.pathPrefix,
+        );
+        const encoded = Buffer.from(prefixedHtml).toString("base64");
         const codeBlock = `<wtfm-code-block tag-name="${decl.tagName}" source="${encoded}">
   <script type="application/json">${cemContext.cemJson}</script>
 </wtfm-code-block>`;
@@ -543,7 +555,7 @@ type ${decl.name} = ${decl.type.text}
       result += `\n${renderAnchoredHeading(
         2,
         `\`<${member.tagName}>\``,
-        { override: member.tagName },
+        { override: member.helpAnchor },
       )}\n`;
       result += await renderDeclaration(member, {
         anchorPrefix: member.tagName,

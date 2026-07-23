@@ -44,6 +44,7 @@ export const parametersRenderer = {
           prefix: options.anchorPrefix,
           override: param.helpAnchor,
           level: 3 + headingOffset,
+          pathPrefix: options.pathPrefix,
         },
       );
     }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { readFile } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
+import { readFile, realpath } from "node:fs/promises";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { checkHelpAnchors } from "./check-help-anchors.js";
 
 const USAGE = "Usage: wtfm-check-help-anchors <help-manifest.json> <expected-anchors.json> [--strict]";
@@ -51,6 +51,15 @@ export async function run(argv = process.argv.slice(2), io = process) {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+async function isMainModule() {
+  if (!process.argv[1]) return false;
+  try {
+    return await realpath(process.argv[1]) === await realpath(fileURLToPath(import.meta.url));
+  } catch {
+    return import.meta.url === pathToFileURL(process.argv[1]).href;
+  }
+}
+
+if (await isMainModule()) {
   process.exitCode = await run();
 }

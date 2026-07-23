@@ -9,7 +9,7 @@
           "name": "SurfaceShell",
           "customElement": true,
           "tagName": "surface-shell",
-          "description": "The settings surface shell.",
+          "description": "The settings surface shell.\n\n```html\n<img src=\"/assets/demo.png\" alt=\"Demo\">\n```",
           "docSurface": { "name": "settings", "description": "" },
           "docSurfaceTitle": { "name": "Settings", "description": "Surface" },
           "docSurfaceParts": {

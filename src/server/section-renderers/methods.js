@@ -25,6 +25,7 @@ export const methodsRenderer = {
         prefix: options.anchorPrefix,
         override: method.helpAnchor,
         level: 3 + headingOffset,
+        pathPrefix: options.pathPrefix,
       });
     }
     return result;

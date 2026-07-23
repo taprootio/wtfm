@@ -1,3 +1,6 @@
+import posthtml from "posthtml";
+import posthtmlUrls from "@11ty/posthtml-urls";
+
 const ABSOLUTE_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 /**
@@ -50,4 +53,45 @@ export function normalizeUrlPrefix(value) {
     ? prefix
     : toRootAbsoluteUrl(prefix);
   return `${normalized.replace(/\/+$/, "")}/`;
+}
+
+/**
+ * Apply a deployment path prefix to one root-absolute internal URL.
+ * Relative and external values are intentionally left alone.
+ *
+ * @param {string} value
+ * @param {string} [pathPrefix="/"]
+ * @returns {string}
+ */
+export function applyPathPrefix(value, pathPrefix = "/") {
+  const url = String(value ?? "").trim();
+  if (!url.startsWith("/") || url.startsWith("//")) return url;
+
+  const prefix = normalizeUrlPrefix(pathPrefix);
+  if (prefix === "/") return url;
+  const parsed = new URL(url, "https://wtfm.invalid");
+  const pathname = `${prefix.replace(/\/$/u, "")}/${parsed.pathname.replace(/^\//u, "")}`;
+  return `${pathname}${parsed.search}${parsed.hash}`;
+}
+
+/**
+ * Prefix root-absolute URLs inside HTML before the markup is base64 encoded.
+ * This covers URL-bearing attributes (including srcset) without rewriting
+ * scripts, text, relative URLs, fragments, data URLs, or external URLs.
+ *
+ * @param {string} html
+ * @param {string} [pathPrefix="/"]
+ * @returns {Promise<string>}
+ */
+export async function applyPathPrefixToHtml(html, pathPrefix = "/") {
+  if (normalizeUrlPrefix(pathPrefix) === "/") return String(html ?? "");
+
+  const result = await posthtml()
+    .use(posthtmlUrls({
+      eachURL(url) {
+        return applyPathPrefix(url, pathPrefix);
+      },
+    }))
+    .process(String(html ?? ""));
+  return result.html;
 }

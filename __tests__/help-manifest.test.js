@@ -65,6 +65,15 @@ describe("help manifest", () => {
     ).toThrow(/Duplicate help heading id "A"/);
   });
 
+  it("does not mistake data-id for a fragment id", () => {
+    expect(extractHelpHeadingIds('<h2 data-id="NotAnAnchor">Title</h2>')).toEqual([]);
+    expect(
+      extractHelpHeadingIds(
+        '<h2 data-id="Wrong" id="Right">One</h2><h3 id="Next" data-id="Wrong">Two</h3>',
+      ),
+    ).toEqual(["Right", "Next"]);
+  });
+
   it("applies a path prefix exactly once", () => {
     expect(applyPathPrefix("/surfaces/settings/?view=all#Title", "/help/")).toBe(
       "/help/surfaces/settings/?view=all#Title",

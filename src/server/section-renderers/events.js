@@ -25,6 +25,7 @@ export const eventsRenderer = {
           prefix: options.anchorPrefix,
           override: event.helpAnchor,
           level: 3 + headingOffset,
+          pathPrefix: options.pathPrefix,
         },
       );
     }

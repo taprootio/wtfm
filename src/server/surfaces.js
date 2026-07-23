@@ -44,10 +44,16 @@ function resolveRoute(builder, fallback, slug, surface) {
   const value = typeof builder === "function"
     ? builder(slug, surface)
     : fallback(slug);
-  if (!value) {
+  const normalized = toRootAbsoluteUrl(value);
+  if (!normalized) {
     throw new Error(`wtfm: Surface "${slug}" resolved to an empty URL.`);
   }
-  return toRootAbsoluteUrl(value);
+  return normalized;
+}
+
+function parseMenuOrder(tag) {
+  const value = Number.parseFloat(tagValue(tag));
+  return Number.isFinite(value) ? value : undefined;
 }
 
 /**
@@ -123,7 +129,7 @@ export function collectSurfaces(customElements, options = {}) {
       menuLabel: tagValue(owner.menuLabel) || pageTitle,
       menuIcon: tagValue(owner.menuIcon),
       menuGroup: tagValue(owner.menuGroup),
-      menuOrder: Number.parseFloat(tagValue(owner.menuOrder)) || undefined,
+      menuOrder: parseMenuOrder(owner.menuOrder),
       memberTags,
       members,
     };

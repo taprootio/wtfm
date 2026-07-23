@@ -8,7 +8,7 @@
  * @param {object} options - Plugin options
  * @param {string[]} [options.excludeAttributes=[]] - Attributes to hide
  * @param {object} [options.attributeExceptions={}] - Tag names where excluded attributes ARE shown
- * @returns {{ tagName: string, cemJson: string }}
+ * @returns {{ tagName: string, cemJson: string, pathPrefix: string }}
  */
 export function buildCemContext(decl, options = {}) {
   const { excludeAttributes = [], attributeExceptions = {} } = options;
@@ -37,6 +37,7 @@ export function buildCemContext(decl, options = {}) {
 
   return {
     tagName: decl.tagName,
+    pathPrefix: options.pathPrefix || "/",
     // Escape closing tags so the JSON is safe to embed inside
     // <script type="application/json">…</script>.  The HTML parser
     // treats any "</script" (case-insensitive) as the end of the

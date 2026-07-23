@@ -43,6 +43,7 @@ export const propertiesRenderer = {
           prefix: options.anchorPrefix,
           override: member.helpAnchor,
           level: 3 + headingOffset,
+          pathPrefix: options.pathPrefix,
         },
       );
     }

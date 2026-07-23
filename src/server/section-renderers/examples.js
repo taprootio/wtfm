@@ -1,6 +1,7 @@
 import * as prettier from "prettier";
 import { buildCemContext } from "./build-cem-context.js";
 import { renderAnchoredHeading } from "../anchors.js";
+import { applyPathPrefixToHtml } from "../urls.js";
 
 /**
  * Section renderer that emits interactive `<wtfm-code-block>` elements
@@ -59,7 +60,11 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext, optio
     if (!htmlCode) continue;
 
     const formatted = await formatHtml(htmlCode);
-    const encoded = Buffer.from(formatted).toString("base64");
+    const prefixedHtml = await applyPathPrefixToHtml(
+      formatted,
+      options.pathPrefix,
+    );
+    const encoded = Buffer.from(prefixedHtml).toString("base64");
     const title = example.title || "";
 
     let block = "";

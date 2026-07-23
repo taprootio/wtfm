@@ -191,6 +191,8 @@ export const config = {
 
 This transforms `/components/button/` and `/dist/docs.js` to
 `/help/components/button/` and `/help/dist/docs.js` in built HTML while leaving
-external and fragment-only URLs unchanged. `inlineSvg` reads and returns file
-content and therefore needs no URL prefix. The WTFM client runtime constructs
-no asset or navigation URLs of its own.
+external and fragment-only URLs unchanged. WTFM also applies the prefix to
+root-absolute URLs inside demo HTML before that source is base64 encoded for
+`<wtfm-code-block>`. Relative and external demo URLs remain unchanged.
+`inlineSvg` reads and returns file content and therefore needs no URL prefix.
+The WTFM client runtime constructs no asset or navigation URLs of its own.

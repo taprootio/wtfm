@@ -62,6 +62,17 @@ describe("collectSurfaces", () => {
     expect(surface.helpUrl).toBe("/guides/settings/");
   });
 
+  it("preserves zero as an explicit menu order", () => {
+    const owner = declaration("SurfaceShell", "surface-shell", {
+      docSurface: tag("settings"),
+      docSurfaceTitle: tag("Settings"),
+      docSurfaceParts: tag("surface-shell"),
+      menuOrder: tag("0"),
+    });
+
+    expect(collectSurfaces(manifest([owner]))[0].menuOrder).toBe(0);
+  });
+
   it.each([
     ["invalid slug", { docSurface: tag("Not Valid") }, "Invalid @docSurface slug"],
     ["missing title", { docSurfaceTitle: undefined }, "must declare @docSurfaceTitle"],
@@ -124,6 +135,11 @@ describe("collectSurfaces", () => {
     expect(() =>
       collectSurfaces(manifest([elementOwner]), {
         helpUrlBuilder: () => "",
+      }),
+    ).toThrow("resolved to an empty URL");
+    expect(() =>
+      collectSurfaces(manifest([elementOwner]), {
+        helpUrlBuilder: () => "   ",
       }),
     ).toThrow("resolved to an empty URL");
   });
