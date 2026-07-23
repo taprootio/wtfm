@@ -21,7 +21,7 @@ export const cssPropertiesRenderer = {
 
     for (const prop of decl.cssProperties) {
       result += await buildDocSection(prop.name, prop.description, "", cemContext, {
-        prefix: options.anchorPrefix,
+        prefix: [options.anchorPrefix, this.key],
         override: prop.helpAnchor,
         level: 3 + headingOffset,
         pathPrefix: options.pathPrefix,

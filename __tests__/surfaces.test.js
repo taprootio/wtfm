@@ -60,6 +60,10 @@ describe("collectSurfaces", () => {
 
     expect(surface.referenceUrl).toBe("/reference/settings");
     expect(surface.helpUrl).toBe("/guides/settings/");
+    expect(surface.crumbs[0]).toEqual({
+      label: "Surfaces",
+      url: "/reference/",
+    });
   });
 
   it("preserves zero as an explicit menu order", () => {

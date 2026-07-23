@@ -23,6 +23,15 @@ describe("stable anchors", () => {
     );
   });
 
+  it("preserves section hierarchy in multi-part prefixes", () => {
+    expect(
+      resolveAnchorId("icon", { prefix: ["esp-badge", "attributes"] }),
+    ).toBe("esp-badge--attributes--icon");
+    expect(resolveAnchorId("icon", { prefix: [undefined, "slots"] })).toBe(
+      "slots--icon",
+    );
+  });
+
   it("preserves an explicit override exactly and does not namespace it", () => {
     expect(
       resolveAnchorId("Display title", {

@@ -22,7 +22,7 @@ export const methodsRenderer = {
 
     for (const method of methods) {
       result += await buildDocSection(method.name, method.description, "", cemContext, {
-        prefix: options.anchorPrefix,
+        prefix: [options.anchorPrefix, this.key],
         override: method.helpAnchor,
         level: 3 + headingOffset,
         pathPrefix: options.pathPrefix,

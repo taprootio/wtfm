@@ -225,6 +225,67 @@ describe("wtfmPlugin", () => {
       expect(result).toContain("### label");
     });
 
+    it("namespaces repeated item names by section and skips unnamed events", async () => {
+      const collisionCem = {
+        modules: [{
+          declarations: [{
+            name: "BadgeWidget",
+            tagName: "badge-widget",
+            description: "A badge.",
+            attributes: [{
+              name: "icon",
+              description: "The icon attribute.",
+              default: '""',
+            }],
+            slots: [{ name: "icon", description: "The icon slot." }],
+            events: [
+              { description: "First unnamed event.", type: { text: "Event" } },
+              { description: "Second unnamed event.", type: { text: "Event" } },
+            ],
+          }],
+        }],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(collisionCem));
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+
+      const result = await config.shortcodes.renderDocs("BadgeWidget");
+      expect(result).toContain("### icon {#attributes--icon}");
+      expect(result).toContain("### icon {#slots--icon}");
+      expect(result).not.toContain("### undefined");
+      expect(warn).toHaveBeenCalledTimes(2);
+      warn.mockRestore();
+    });
+
+    it("names duplicate anchor failures and their declaration", async () => {
+      const duplicateCem = {
+        modules: [{
+          declarations: [{
+            name: "DuplicateWidget",
+            tagName: "duplicate-widget",
+            attributes: [{
+              name: "label",
+              description: "Attribute label.",
+              helpAnchor: { name: "Same" },
+            }],
+            slots: [{
+              name: "label",
+              description: "Slot label.",
+              helpAnchor: { name: "Same" },
+            }],
+          }],
+        }],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(duplicateCem));
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+
+      await expect(config.shortcodes.renderDocs("DuplicateWidget")).rejects.toThrow(
+        'Duplicate anchor id "Same" in declaration "DuplicateWidget"',
+      );
+    });
+
     it("finds a component class that is not the first declaration in its module", async () => {
       const multiDeclCem = {
         modules: [
@@ -750,12 +811,14 @@ describe("wtfmPlugin", () => {
       expect(result).toContain("### Attributes {#surface-shell--attributes}");
       expect(result).toContain("#### heading {#ShellHeading}");
       expect(result).toContain("### Attributes {#surface-panel--attributes}");
-      expect(result).toContain("#### label {#surface-panel--label}");
+      expect(result).toContain(
+        "#### label {#surface-panel--attributes--label}",
+      );
       expect(result).not.toContain('<div class="doc-header">');
 
       const html = config.shortcodes.renderMarkdown(result);
       expect(html).toContain('id="surface-shell--attributes"');
-      expect(html).toContain('id="surface-panel--label"');
+      expect(html).toContain('id="surface-panel--attributes--label"');
     });
 
     it("rejects unknown surface slugs", async () => {
@@ -763,6 +826,35 @@ describe("wtfmPlugin", () => {
       wtfmPlugin(config, { cemPath: "/fake/cem.json" });
       await expect(config.shortcodes.renderSurfaceDocs("missing")).rejects.toThrow(
         'Unknown documentation surface "missing"',
+      );
+    });
+
+    it("names duplicate anchor failures and their reference surface", async () => {
+      const duplicateSurfaceCem = {
+        modules: [{
+          declarations: [
+            {
+              name: "SurfaceOne",
+              tagName: "surface-one",
+              helpAnchor: { name: "Same" },
+              docSurface: { name: "settings" },
+              docSurfaceTitle: { name: "Settings" },
+              docSurfaceParts: { name: "surface-one,", description: "surface-two" },
+            },
+            {
+              name: "SurfaceTwo",
+              tagName: "surface-two",
+              helpAnchor: { name: "Same" },
+            },
+          ],
+        }],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(duplicateSurfaceCem));
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+
+      await expect(config.shortcodes.renderSurfaceDocs("settings")).rejects.toThrow(
+        'Duplicate anchor id "Same" in surface "settings" reference document',
       );
     });
   });
@@ -800,6 +892,30 @@ describe("wtfmPlugin", () => {
       wtfmPlugin(config, { cemPath: "/fake/cem.json" });
       expect(() => config.shortcodes.renderHelpDocs("missing", "# Help")).toThrow(
         'Unknown documentation surface "missing"',
+      );
+    });
+
+    it("names duplicate anchor failures and their help surface", () => {
+      const surfaceCem = {
+        modules: [{
+          declarations: [{
+            name: "SurfaceShell",
+            tagName: "surface-shell",
+            docSurface: { name: "settings" },
+            docSurfaceTitle: { name: "Settings" },
+            docSurfaceParts: { name: "surface-shell" },
+          }],
+        }],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(surfaceCem));
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+
+      expect(() => config.shortcodes.renderHelpDocs(
+        "settings",
+        "## One {#Same}\n\n## Two {#Same}",
+      )).toThrow(
+        'Duplicate anchor id "Same" in surface "settings" help document',
       );
     });
   });

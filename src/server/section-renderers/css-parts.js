@@ -24,7 +24,7 @@ export const cssPartsRenderer = {
 
     for (const part of decl.cssParts) {
       result += await buildDocSection(part.name, part.description, "", cemContext, {
-        prefix: options.anchorPrefix,
+        prefix: [options.anchorPrefix, this.key],
         override: part.helpAnchor,
         level: 3 + headingOffset,
         pathPrefix: options.pathPrefix,

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { eventsRenderer } from "../src/server/section-renderers/events.js";
 import { fullDecl, minimalDecl } from "./fixtures/cem-fixtures.js";
 
@@ -46,5 +46,25 @@ describe("eventsRenderer", () => {
     const result = await eventsRenderer.render(fullDecl, {});
     expect(result).toContain("Fires when the element opens.");
     expect(result).toContain("Fires when the element closes.");
+  });
+
+  it("omits unnamed events with an actionable warning", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const decl = {
+      ...minimalDecl,
+      tagName: "test-dialog",
+      events: [
+        { description: "First unnamed event.", type: { text: "Event" } },
+        { description: "Second unnamed event.", type: { text: "Event" } },
+      ],
+    };
+
+    await expect(eventsRenderer.render(decl, {})).resolves.toBe("");
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(expect.objectContaining({
+      message: "Unnamed event omitted from documentation",
+      tagName: "test-dialog",
+    }));
+    warn.mockRestore();
   });
 });

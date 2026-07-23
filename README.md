@@ -33,9 +33,10 @@ npm install --save-dev @taprootio/wtfm
 
 The Eleventy plugin gives every Markdown heading an `id`. Generated ids use
 lowercase kebab-case (`CSS Properties` becomes `css-properties`). Generated
-section/item headings use the same convention. Duplicate ids fail the build
-instead of being silently renumbered, because published fragment URLs are a
-compatibility contract.
+section/item headings use the same convention. Item ids include their section
+to avoid cross-section collisions (`attributes--icon` and `slots--icon`).
+Duplicate ids fail the build instead of being silently renumbered, because
+published fragment URLs are a compatibility contract.
 
 Pin an exact, case-sensitive id in authored Markdown with an id-only heading
 attribute:
@@ -56,9 +57,11 @@ helpAnchor: {
 },
 ```
 
-When component docs are composed into a surface, generated ids are namespaced
-by custom-element tag (for example `article-fields--attributes`). Explicit ids
-are never changed or namespaced.
+When component docs are composed into a surface, generated ids are additionally
+namespaced by custom-element tag (for example
+`article-fields--attributes--title`). Explicit ids are never changed or
+namespaced. CEM events without names are omitted with a build warning because
+they cannot receive a stable semantic anchor.
 
 ## Composed documentation surfaces
 

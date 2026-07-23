@@ -31,7 +31,7 @@ export const attributesRenderer = {
         `\`${attr.name}\` has a default value of \`${attr.default}\`.`,
         cemContext,
         {
-          prefix: options.anchorPrefix,
+          prefix: [options.anchorPrefix, this.key],
           override: attr.helpAnchor,
           level: 3 + headingOffset,
           pathPrefix: options.pathPrefix,

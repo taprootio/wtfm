@@ -58,7 +58,7 @@ export function validateAnchorId(value, context = "heading") {
  *
  * @param {string} title
  * @param {object} [options]
- * @param {string} [options.prefix]
+ * @param {string|string[]} [options.prefix]
  * @param {{name?: string, description?: string} | string} [options.override]
  * @param {string} [options.context]
  * @returns {string}
@@ -69,7 +69,12 @@ export function resolveAnchorId(title, options = {}) {
   if (explicit) return validateAnchorId(explicit, context);
 
   const generated = slugifyAnchor(title);
-  return prefix ? `${slugifyAnchor(prefix)}--${generated}` : generated;
+  const prefixParts = (Array.isArray(prefix) ? prefix : [prefix])
+    .filter((part) => part !== undefined && part !== null && `${part}`.trim())
+    .map(slugifyAnchor);
+  return prefixParts.length > 0
+    ? `${prefixParts.join("--")}--${generated}`
+    : generated;
 }
 
 /**

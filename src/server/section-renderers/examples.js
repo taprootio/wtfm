@@ -70,7 +70,7 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext, optio
     let block = "";
     if (title) {
       block += `\n${renderAnchoredHeading(3 + headingOffset, title, {
-        prefix: options.anchorPrefix,
+        prefix: [options.anchorPrefix, "examples"],
         override: example.helpAnchor,
       })}\n\n`;
     }

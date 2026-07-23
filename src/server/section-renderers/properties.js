@@ -40,7 +40,7 @@ export const propertiesRenderer = {
         postDescription,
         null,
         {
-          prefix: options.anchorPrefix,
+          prefix: [options.anchorPrefix, this.key],
           override: member.helpAnchor,
           level: 3 + headingOffset,
           pathPrefix: options.pathPrefix,

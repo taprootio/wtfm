@@ -78,6 +78,28 @@ function buildFunctionSignature(decl) {
   return sig;
 }
 
+function contextualizeAnchorError(error, context) {
+  const message = String(error?.message ?? error);
+  const duplicateId =
+    message.match(/`id` attribute `([^`]+)` is not unique/iu)?.[1] ??
+    message.match(/Duplicate generated anchor id "([^"]+)"/iu)?.[1] ??
+    message.match(/anchor id "([^"]+)" is not unique/iu)?.[1];
+
+  if (duplicateId) {
+    return new Error(
+      `wtfm: Duplicate anchor id "${duplicateId}" in ${context}.`,
+      { cause: error },
+    );
+  }
+  if (/anchor|`id` attribute|Invalid anchor id/iu.test(message)) {
+    return new Error(
+      `wtfm: Anchor validation failed in ${context}: ${message}`,
+      { cause: error },
+    );
+  }
+  return error;
+}
+
 /**
  * WTFM Eleventy plugin — registers shortcodes, filters, and
  * configuration for generating documentation from a Custom
@@ -297,7 +319,11 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
   // same shared markdown-it instance registered above:
   //   return this.renderMarkdown(someMarkdownString);
   eleventyConfig.addShortcode("renderMarkdown", function (content) {
-    return markdownLib.render(content ?? "");
+    try {
+      return markdownLib.render(content ?? "");
+    } catch (error) {
+      throw contextualizeAnchorError(error, "Markdown document");
+    }
   });
 
   // ── Asset filter ─────────────────────────────────────────────
@@ -543,25 +569,43 @@ type ${decl.name} = ${decl.type.text}
 
   // ── renderDocs shortcode ─────────────────────────────────────
   eleventyConfig.addShortcode("renderDocs", async function (declName) {
-    return renderDeclaration(declName);
+    const context = `declaration "${declName}"`;
+    let result;
+    try {
+      result = await renderDeclaration(declName);
+    } catch (error) {
+      throw contextualizeAnchorError(error, context);
+    }
+    try {
+      markdownLib.render(result);
+    } catch (error) {
+      throw contextualizeAnchorError(error, context);
+    }
+    return result;
   });
 
   // ── renderSurfaceDocs shortcode ──────────────────────────────
   eleventyConfig.addShortcode("renderSurfaceDocs", async function (slug) {
     const surface = findSurface(surfaces, slug);
+    const context = `surface "${slug}" reference document`;
     let result = "";
 
-    for (const member of surface.members) {
-      result += `\n${renderAnchoredHeading(
-        2,
-        `\`<${member.tagName}>\``,
-        { override: member.helpAnchor },
-      )}\n`;
-      result += await renderDeclaration(member, {
-        anchorPrefix: member.tagName,
-        headingOffset: 1,
-        includeHeader: false,
-      });
+    try {
+      for (const member of surface.members) {
+        result += `\n${renderAnchoredHeading(
+          2,
+          `\`<${member.tagName}>\``,
+          { override: member.helpAnchor },
+        )}\n`;
+        result += await renderDeclaration(member, {
+          anchorPrefix: member.tagName,
+          headingOffset: 1,
+          includeHeader: false,
+        });
+      }
+      markdownLib.render(result);
+    } catch (error) {
+      throw contextualizeAnchorError(error, context);
     }
 
     return result;
@@ -570,7 +614,14 @@ type ${decl.name} = ${decl.type.text}
   // ── renderHelpDocs shortcode ─────────────────────────────────
   eleventyConfig.addShortcode("renderHelpDocs", function (slug, markdown) {
     const surface = findSurface(surfaces, slug);
-    return renderHelpDocument(markdown, { documentUrl: surface.helpUrl });
+    try {
+      return renderHelpDocument(markdown, { documentUrl: surface.helpUrl });
+    } catch (error) {
+      throw contextualizeAnchorError(
+        error,
+        `surface "${slug}" help document`,
+      );
+    }
   });
 
   // ── Versioned help manifest ──────────────────────────────────

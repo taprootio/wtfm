@@ -25,7 +25,7 @@ export const slotsRenderer = {
         "",
         cemContext,
         {
-          prefix: options.anchorPrefix,
+          prefix: [options.anchorPrefix, this.key],
           override: slot.helpAnchor,
           level: 3 + headingOffset,
           pathPrefix: options.pathPrefix,

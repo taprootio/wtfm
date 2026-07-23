@@ -10,19 +10,30 @@ export const eventsRenderer = {
   async render(decl, options) {
     if (!decl.events?.length) return "";
 
-    const introText = resolveIntro(this.intro, decl.tagName, decl.events.length);
+    const events = decl.events.filter((event) => {
+      if (`${event.name ?? ""}`.trim()) return true;
+      console.warn({
+        message: "Unnamed event omitted from documentation",
+        tagName: decl.tagName,
+        type: event.type?.text,
+      });
+      return false;
+    });
+    if (events.length === 0) return "";
+
+    const introText = resolveIntro(this.intro, decl.tagName, events.length);
     const cemContext = buildCemContext(decl, options);
     const headingOffset = options.headingOffset ?? 0;
     let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
-    for (const event of decl.events) {
+    for (const event of events) {
       result += await buildDocSection(
         event.name,
         event.description,
         `\`${event.name}\` is of type \`${event.type?.text || ""}\`.`,
         cemContext,
         {
-          prefix: options.anchorPrefix,
+          prefix: [options.anchorPrefix, this.key],
           override: event.helpAnchor,
           level: 3 + headingOffset,
           pathPrefix: options.pathPrefix,

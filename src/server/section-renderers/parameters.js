@@ -41,7 +41,7 @@ export const parametersRenderer = {
         postParts.join(" "),
         null,
         {
-          prefix: options.anchorPrefix,
+          prefix: [options.anchorPrefix, this.key],
           override: param.helpAnchor,
           level: 3 + headingOffset,
           pathPrefix: options.pathPrefix,

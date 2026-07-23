@@ -56,6 +56,13 @@ function parseMenuOrder(tag) {
   return Number.isFinite(value) ? value : undefined;
 }
 
+function parentReferenceUrl(referenceUrl) {
+  const path = String(referenceUrl).split(/[?#]/u, 1)[0].replace(/\/+$/u, "");
+  if (!path) return "/";
+  const separator = path.lastIndexOf("/");
+  return separator >= 0 ? path.slice(0, separator + 1) || "/" : "/";
+}
+
 /**
  * Collect and validate surface definitions from a Custom Elements Manifest.
  *
@@ -152,7 +159,7 @@ export function collectSurfaces(customElements, options = {}) {
       referenceUrl,
       helpUrl,
       crumbs: [
-        { label: "Surfaces", url: "/surfaces/" },
+        { label: "Surfaces", url: parentReferenceUrl(referenceUrl) },
         { label: pageTitle, url: referenceUrl },
       ],
     });
