@@ -23,7 +23,7 @@
       "depends_on": [],
       "owner": "jereme",
       "collaborators": [],
-      "summary": "Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth, and migrate taproot-controls to consume it from there."
+      "summary": "Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth; ship 0.13.0 as the first public release."
     }
   ]
 }
