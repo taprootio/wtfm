@@ -18,6 +18,7 @@ npm install --save-dev @taprootio/wtfm
 - `/anchors` — the shared slug, explicit-id, and Markdown anchor helpers.
 - `/urls` — root-absolute and document-relative URL helpers.
 - `/surfaces` — surface collection and validation helpers.
+- `/help-document` — the restricted semantic Markdown renderer for help pages.
 - `/data/components`, `/data/surfaces`, `/data/types`, `/data/manifest` — data
   helpers.
 - `/bundler/manifest`, `/bundler/copy-assets` — bundler plugins.
@@ -97,6 +98,29 @@ build with an actionable error. Existing `@menuLabel`, `@menuIcon`,
 `@menuGroup`, and `@menuOrder` metadata is reused for navigation.
 Surface slugs and their derived URLs are permanent link targets; renaming one
 after release is a breaking documentation change.
+
+## Authored help documents
+
+Reference docs and help prose are separate inputs. Use `renderHelpDocs` in a
+surface help template, passing the surface slug and authored Markdown:
+
+```js
+export default async function (data) {
+  return this.renderHelpDocs(data.surface.slug, data.helpMarkdown);
+}
+```
+
+The equivalent standalone API is
+`renderHelpDocument(markdown, { documentUrl })` from `/help-document`. Raw HTML
+and MathJax are disabled. Output is limited to headings, paragraphs, emphasis,
+lists, tables, code, blockquotes, images, links, horizontal rules, and line
+breaks. Only heading `id`, link `href`, and image `src`/`alt` attributes are
+emitted; wrappers, classes, styles, scripts, and framework attributes fail the
+output contract.
+
+Pin field-level anchors with exact, case-sensitive heading ids such as
+`## Title {#Title}`. Relative links and images are resolved from the surface's
+help route into root-absolute URLs before Eleventy applies its `pathPrefix`.
 
 ## Path-prefixed Eleventy sites
 

@@ -9,8 +9,8 @@
   ],
   "nextId": "WTFM0009",
   "counts": {
-    "active": 3,
-    "completed": 5,
+    "active": 2,
+    "completed": 6,
     "removed": 0
   },
   "tasks": [
@@ -31,22 +31,6 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
-    },
-    {
-      "id": "WTFM0006",
-      "title": "Help-document output mode conforming to ESP0119 strip-to-bare",
-      "status": "active",
-      "milestone": "Help & Docs Surfaces",
-      "priority": "High",
-      "effort": 8,
-      "depends_on": [
-        "WTFM0004",
-        "WTFM0005",
-        "WTFM0008"
-      ],
-      "owner": "jereme",
-      "collaborators": [],
-      "summary": "A lean renderer for separately authored surface-help Markdown whose output survives Espalier ESP0119 normalization — semantic elements and exact field-name anchors only, with document-relative URLs made safe for injection into the editor page."
     },
     {
       "id": "WTFM0007",
@@ -116,6 +100,23 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Let one component define a named surface and its ordered reusable member components, then generate pagination data and a namespaced composed reference page for that unit of display while keeping component pages unchanged.",
+      "completed_on": "2026-07-23"
+    },
+    {
+      "id": "WTFM0006",
+      "title": "Help-document output mode conforming to ESP0119 strip-to-bare",
+      "status": "completed",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "High",
+      "effort": 8,
+      "depends_on": [
+        "WTFM0004",
+        "WTFM0005",
+        "WTFM0008"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "A lean renderer for separately authored surface-help Markdown whose output survives Espalier ESP0119 normalization — semantic elements and exact field-name anchors only, with document-relative URLs made safe for injection into the editor page.",
       "completed_on": "2026-07-23"
     },
     {

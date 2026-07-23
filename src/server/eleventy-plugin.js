@@ -11,6 +11,7 @@ import {
 import { buildCemContext } from "./section-renderers/build-cem-context.js";
 import { configureMarkdownAnchors, renderAnchoredHeading } from "./anchors.js";
 import { collectSurfaces, findSurface } from "./surfaces.js";
+import { renderHelpDocument } from "./help-document.js";
 
 /**
  * Reads the @docSections tag from a CEM declaration and returns
@@ -85,6 +86,10 @@ function buildFunctionSignature(decl) {
  *   for a web component or type declaration by looking up its
  *   declaration in the CEM (then the type manifest) and running
  *   all configured section renderers.
+ * - **`renderSurfaceDocs(slug)`** — composes reference docs for the ordered
+ *   members of a validated documentation surface.
+ * - **`renderHelpDocs(slug, markdown)`** — renders separately authored help
+ *   Markdown into lean semantic HTML for that surface's help route.
  * - **`inlineSvg(fileName)`** — reads an SVG file from `assetsDir`
  *   and returns its content inline (with the XML declaration stripped).
  *
@@ -545,6 +550,12 @@ type ${decl.name} = ${decl.type.text}
     }
 
     return result;
+  });
+
+  // ── renderHelpDocs shortcode ─────────────────────────────────
+  eleventyConfig.addShortcode("renderHelpDocs", function (slug, markdown) {
+    const surface = findSurface(surfaces, slug);
+    return renderHelpDocument(markdown, { documentUrl: surface.helpUrl });
   });
 
   // ── Global data ──────────────────────────────────────────────

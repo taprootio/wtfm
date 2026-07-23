@@ -145,6 +145,7 @@ describe("wtfmPlugin", () => {
     const config = createMockEleventyConfig();
     wtfmPlugin(config, { cemPath: "/fake/cem.json" });
     expect(config.shortcodes).toHaveProperty("renderSurfaceDocs");
+    expect(config.shortcodes).toHaveProperty("renderHelpDocs");
     expect(config.globalData.docSurfaces).toEqual([]);
   });
 
@@ -733,6 +734,43 @@ describe("wtfmPlugin", () => {
       const config = createMockEleventyConfig();
       wtfmPlugin(config, { cemPath: "/fake/cem.json" });
       await expect(config.shortcodes.renderSurfaceDocs("missing")).rejects.toThrow(
+        'Unknown documentation surface "missing"',
+      );
+    });
+  });
+
+  describe("renderHelpDocs shortcode", () => {
+    it("renders authored help against the surface help route", () => {
+      const surfaceCem = {
+        modules: [{
+          declarations: [{
+            name: "SurfaceShell",
+            tagName: "surface-shell",
+            docSurface: { name: "settings" },
+            docSurfaceTitle: { name: "Settings" },
+            docSurfaceParts: { name: "surface-shell" },
+          }],
+        }],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(surfaceCem));
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, {
+        cemPath: "/fake/cem.json",
+        helpUrlBuilder: (slug) => `/guides/${slug}/`,
+      });
+
+      expect(
+        config.shortcodes.renderHelpDocs(
+          "settings",
+          "## Title {#Title}\n\n![Field](images/title.png)",
+        ),
+      ).toContain('src="/guides/settings/images/title.png"');
+    });
+
+    it("rejects unknown surface slugs", () => {
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+      expect(() => config.shortcodes.renderHelpDocs("missing", "# Help")).toThrow(
         'Unknown documentation surface "missing"',
       );
     });
