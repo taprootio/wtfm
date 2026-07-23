@@ -55,7 +55,16 @@ const value = "<safe>";
     );
     expect(() =>
       renderHelpDocument("## First {#FieldName}\n\n## Second {#FieldName}"),
-    ).toThrow(/FieldName.*not unique/i);
+    ).toThrow('Duplicate anchor id "FieldName" in help document at "/"');
+  });
+
+  it("identifies the standalone document when anchors collide", () => {
+    expect(() => renderHelpDocument(
+      "## First {#FieldName}\n\n## Second {#FieldName}",
+      { documentUrl: "/surfaces/settings/help/" },
+    )).toThrow(
+      'Duplicate anchor id "FieldName" in help document at "/surfaces/settings/help/"',
+    );
   });
 
   it("removes non-id authored attributes and escapes raw HTML", () => {

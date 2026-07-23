@@ -10,7 +10,11 @@ import {
   defaultTypeSections,
 } from "./section-renderers/index.js";
 import { buildCemContext } from "./section-renderers/build-cem-context.js";
-import { configureMarkdownAnchors, renderAnchoredHeading } from "./anchors.js";
+import {
+  configureMarkdownAnchors,
+  contextualizeAnchorError,
+  renderAnchoredHeading,
+} from "./anchors.js";
 import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
 import { buildHelpManifest } from "./help-manifest.js";
@@ -76,28 +80,6 @@ function buildFunctionSignature(decl) {
   }
 
   return sig;
-}
-
-function contextualizeAnchorError(error, context) {
-  const message = String(error?.message ?? error);
-  const duplicateId =
-    message.match(/`id` attribute `([^`]+)` is not unique/iu)?.[1] ??
-    message.match(/Duplicate generated anchor id "([^"]+)"/iu)?.[1] ??
-    message.match(/anchor id "([^"]+)" is not unique/iu)?.[1];
-
-  if (duplicateId) {
-    return new Error(
-      `wtfm: Duplicate anchor id "${duplicateId}" in ${context}.`,
-      { cause: error },
-    );
-  }
-  if (/anchor|`id` attribute|Invalid anchor id/iu.test(message)) {
-    return new Error(
-      `wtfm: Anchor validation failed in ${context}: ${message}`,
-      { cause: error },
-    );
-  }
-  return error;
 }
 
 /**
@@ -614,14 +596,10 @@ type ${decl.name} = ${decl.type.text}
   // ── renderHelpDocs shortcode ─────────────────────────────────
   eleventyConfig.addShortcode("renderHelpDocs", function (slug, markdown) {
     const surface = findSurface(surfaces, slug);
-    try {
-      return renderHelpDocument(markdown, { documentUrl: surface.helpUrl });
-    } catch (error) {
-      throw contextualizeAnchorError(
-        error,
-        `surface "${slug}" help document`,
-      );
-    }
+    return renderHelpDocument(markdown, {
+      documentUrl: surface.helpUrl,
+      context: `surface "${slug}" help document`,
+    });
   });
 
   // ── Versioned help manifest ──────────────────────────────────

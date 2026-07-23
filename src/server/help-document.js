@@ -1,5 +1,5 @@
 import markdownIt from "markdown-it";
-import { configureMarkdownAnchors } from "./anchors.js";
+import { configureMarkdownAnchors, contextualizeAnchorError } from "./anchors.js";
 import { resolveDocumentUrl } from "./urls.js";
 
 export const HELP_DOCUMENT_TAGS = Object.freeze([
@@ -105,10 +105,13 @@ export function assertHelpDocumentMarkup(html) {
  * @param {object} [options]
  * @param {string} [options.documentUrl="/"] Route of the help document, used
  *   as the base for relative link and image URLs.
+ * @param {string} [options.context] Human-readable document identity for
+ *   anchor validation errors.
  * @returns {string}
  */
 export function renderHelpDocument(markdown, options = {}) {
   const documentUrl = options.documentUrl || "/";
+  const context = options.context || `help document at "${documentUrl}"`;
   const md = configureMarkdownAnchors(markdownIt({
     html: false,
     breaks: false,
@@ -142,5 +145,9 @@ export function renderHelpDocument(markdown, options = {}) {
   md.renderer.rules.fence = (tokens, index) =>
     `<pre><code>${md.utils.escapeHtml(tokens[index].content)}</code></pre>\n`;
 
-  return assertHelpDocumentMarkup(md.render(String(markdown ?? "")));
+  try {
+    return assertHelpDocumentMarkup(md.render(String(markdown ?? "")));
+  } catch (error) {
+    throw contextualizeAnchorError(error, context);
+  }
 }

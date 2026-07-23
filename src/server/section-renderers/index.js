@@ -1,6 +1,7 @@
 export { buildDocSection } from "./build-doc-section.js";
 export {
   configureMarkdownAnchors,
+  contextualizeAnchorError,
   renderAnchoredHeading,
   resolveAnchorId,
   slugifyAnchor,

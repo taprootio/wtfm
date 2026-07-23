@@ -53,6 +53,36 @@ export function validateAnchorId(value, context = "heading") {
 }
 
 /**
+ * Add a declaration or document identity to anchor failures while replacing
+ * markdown-it-attrs' authored-Markdown wording for generated renderer ids.
+ *
+ * @param {unknown} error
+ * @param {string} context
+ * @returns {Error}
+ */
+export function contextualizeAnchorError(error, context) {
+  const message = String(error?.message ?? error);
+  const duplicateId =
+    message.match(/`id` attribute `([^`]+)` is not unique/iu)?.[1] ??
+    message.match(/Duplicate (?:generated )?anchor id "([^"]+)"/iu)?.[1] ??
+    message.match(/anchor id "([^"]+)" is not unique/iu)?.[1];
+
+  if (duplicateId) {
+    return new Error(
+      `wtfm: Duplicate anchor id "${duplicateId}" in ${context}.`,
+      { cause: error },
+    );
+  }
+  if (/anchor|`id` attribute|Invalid anchor id/iu.test(message)) {
+    return new Error(
+      `wtfm: Anchor validation failed in ${context}: ${message}`,
+      { cause: error },
+    );
+  }
+  return error instanceof Error ? error : new Error(message);
+}
+
+/**
  * Resolve the id for a generated heading. Overrides preserve exact case and
  * are never namespaced; generated ids can be namespaced for surface pages.
  *
