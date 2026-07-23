@@ -30,7 +30,7 @@
       ],
       "owner": "jereme",
       "collaborators": [],
-      "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, surface pages, an ESP0119-conformant help-document mode, a help manifest with drift checking, and path-prefix portability — coordinating sequencing and the cross-repo contracts."
+      "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
     },
     {
       "id": "WTFM0004",
@@ -42,7 +42,7 @@
       "depends_on": [],
       "owner": "jereme",
       "collaborators": [],
-      "summary": "Give every rendered heading a deterministic, documented id — section headings, per-item headings, and markdown guide content — with a JSDoc override tag so anchors can be pinned to Espalier field-names, making wtfm output URL-addressable at section granularity."
+      "summary": "Give every rendered heading a deterministic, collision-safe id — namespaced on composed surfaces and exactly overridable from Markdown or CEM metadata — so reference docs remain stable and authored help anchors can match Espalier field-names."
     },
     {
       "id": "WTFM0005",
@@ -51,10 +51,12 @@
       "milestone": "Help & Docs Surfaces",
       "priority": "High",
       "effort": 8,
-      "depends_on": [],
+      "depends_on": [
+        "WTFM0004"
+      ],
       "owner": "jereme",
       "collaborators": [],
-      "summary": "Let components declare membership in a named surface (a unit of display like a page editor or form) and generate one composed doc page per surface — declaration tags, a surfaces data helper for nav and URLs, and rendering that composes member components in order."
+      "summary": "Let one component define a named surface and its ordered reusable member components, then generate pagination data and a namespaced composed reference page for that unit of display while keeping component pages unchanged."
     },
     {
       "id": "WTFM0006",
@@ -65,11 +67,12 @@
       "effort": 8,
       "depends_on": [
         "WTFM0004",
-        "WTFM0005"
+        "WTFM0005",
+        "WTFM0008"
       ],
       "owner": "jereme",
       "collaborators": [],
-      "summary": "A lean render mode that emits one help document per surface whose markup survives Espalier ESP0119's strip-to-bare normalization — semantic elements and stable field-name anchors only, plain code instead of interactive demos — so fetched help renders cleanly inside the flyout."
+      "summary": "A lean renderer for separately authored surface-help Markdown whose output survives Espalier ESP0119 normalization — semantic elements and exact field-name anchors only, with document-relative URLs made safe for injection into the editor page."
     },
     {
       "id": "WTFM0007",
@@ -77,9 +80,8 @@
       "status": "active",
       "milestone": "Help & Docs Surfaces",
       "priority": "Medium",
-      "effort": 3,
+      "effort": 5,
       "depends_on": [
-        "WTFM0005",
         "WTFM0006"
       ],
       "owner": "jereme",
@@ -92,11 +94,11 @@
       "status": "active",
       "milestone": "Help & Docs Surfaces",
       "priority": "Medium",
-      "effort": 3,
+      "effort": 5,
       "depends_on": [],
       "owner": "jereme",
       "collaborators": [],
-      "summary": "Make wtfm-generated URLs, breadcrumbs, nav data, and client-asset references compose correctly with an Eleventy pathPrefix so a docs site can serve from a sub-path like /help/ on an app origin — the serving contract Taproot's help site depends on."
+      "summary": "Make wtfm's root-absolute page, breadcrumb, asset, and help-document URLs compose through Eleventy's HtmlBasePlugin with pathPrefix, verified by a real site built and inspected under /help/."
     },
     {
       "id": "WTFM0001",
