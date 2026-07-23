@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: "24.x"
 
       - name: Install dependencies
         run: npm ci
@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,11 +50,12 @@ jobs:
           fi
           echo "version=$CURRENT" >> $GITHUB_OUTPUT
 
+      # Node 24 bundles npm >= 11.5.1, required for OIDC trusted publishing.
       - name: Set up Node.js
         if: steps.check.outputs.should_publish == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           registry-url: https://registry.npmjs.org
           scope: "@taprootio"
 
@@ -61,11 +63,11 @@ jobs:
         if: steps.check.outputs.should_publish == 'true'
         run: npm ci && npm run build
 
+      # Auth comes from the npmjs.com trusted publisher via GitHub OIDC —
+      # no registry token is stored or passed.
       - name: Publish
         if: steps.check.outputs.should_publish == 'true'
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Tag only after a successful publish so a failed publish leaves no tag
       # behind and a re-run retries instead of skipping.

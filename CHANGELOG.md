@@ -1,3 +1,11 @@
+## [0.13.1](https://github.com/taprootio/wtfm/compare/v0.13.0...v0.13.1) (2026-07-23)
+
+
+### Features
+
+* publish via npm Trusted Publishing — releases authenticate with a per-run
+  GitHub Actions OIDC token instead of a stored registry token (WTFM0002)
+
 ## [0.13.0](https://github.com/taprootio/wtfm/compare/v0.12.3...v0.13.0) (2026-07-23)
 
 
