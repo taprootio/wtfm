@@ -7,9 +7,9 @@
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0009",
+  "nextId": "WTFM0010",
   "counts": {
-    "active": 1,
+    "active": 2,
     "completed": 7,
     "removed": 0
   },
@@ -31,6 +31,20 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
+    },
+    {
+      "id": "WTFM0009",
+      "title": "Retarget the client runtime at @taprootio/espalier",
+      "status": "active",
+      "milestone": "Alpha",
+      "priority": "High",
+      "effort": 2,
+      "depends_on": [
+        "WTFM0001"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Rename the client runtime's optional peer dependency and import from the legacy @taprootio/taproot-controls package to the public @taprootio/espalier name, so Espalier's repo can drop its GitHub Packages scope routing entirely."
     },
     {
       "id": "WTFM0001",
