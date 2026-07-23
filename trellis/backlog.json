@@ -1,0 +1,29 @@
+{
+  "prefix": "WTFM",
+  "milestones": [
+    "Alpha",
+    "Beta",
+    "v1",
+    "Future"
+  ],
+  "nextId": "WTFM0002",
+  "counts": {
+    "active": 1,
+    "completed": 0,
+    "removed": 0
+  },
+  "tasks": [
+    {
+      "id": "WTFM0001",
+      "title": "Publish @taprootio/wtfm to the public npm registry",
+      "status": "active",
+      "milestone": "Alpha",
+      "priority": "High",
+      "effort": 3,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth, and migrate taproot-controls to consume it from there."
+    }
+  ]
+}
