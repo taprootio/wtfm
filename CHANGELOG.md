@@ -1,3 +1,12 @@
+## [0.13.0](https://github.com/taprootio/wtfm/compare/v0.12.3...v0.13.0) (2026-07-23)
+
+
+### Features
+
+* first public npm release — `@taprootio/wtfm` now publishes to the public
+  npm registry instead of GitHub Packages, so it installs without GitHub auth
+  (WTFM0001)
+
 ## [0.11.0](https://github.com/taprootio/wtfm/compare/v0.8.0...v0.11.0) (2026-03-07)
 
 

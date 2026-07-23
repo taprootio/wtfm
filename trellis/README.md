@@ -7,10 +7,4 @@ generated; do not hand-edit between the markers — edit the per-item files in
 
 <!-- BEGIN GENERATED:MILESTONES -->
 
-### Alpha
-
-| ID | Title | Owner | Priority | Effort |
-| --- | --- | --- | --- | --- |
-| [WTFM0001](active/WTFM0001.md) | Publish @taprootio/wtfm to the public npm registry | jereme | High | 3 |
-
 <!-- END GENERATED:MILESTONES -->

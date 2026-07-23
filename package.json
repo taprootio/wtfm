@@ -1,6 +1,6 @@
 {
   "name": "@taprootio/wtfm",
-  "version": "0.12.3",
+  "version": "0.13.0",
   "description": "WTFM — documentation tooling for Custom Elements Manifest-based component libraries",
   "type": "module",
   "exports": {
@@ -110,6 +110,7 @@
     "vitest": "^4.0.18"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
