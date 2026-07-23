@@ -7,12 +7,6 @@ generated; do not hand-edit between the markers — edit the per-item files in
 
 <!-- BEGIN GENERATED:MILESTONES -->
 
-### Alpha
-
-| ID | Title | Owner | Priority | Effort |
-| --- | --- | --- | --- | --- |
-| [WTFM0009](active/WTFM0009.md) | Retarget the client runtime at @taprootio/espalier | jereme | High | 2 |
-
 ### Help & Docs Surfaces
 
 | ID | Title | Owner | Priority | Effort |
