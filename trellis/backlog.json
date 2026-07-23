@@ -9,8 +9,8 @@
   ],
   "nextId": "WTFM0009",
   "counts": {
-    "active": 5,
-    "completed": 3,
+    "active": 4,
+    "completed": 4,
     "removed": 0
   },
   "tasks": [
@@ -77,18 +77,6 @@
       "summary": "Emit a machine-readable help manifest (surface → URLs → anchor list) at build time and ship a check command that fails when a consumer-supplied expected-anchor list no longer matches the built docs — turning silent anchor drift into a CI failure."
     },
     {
-      "id": "WTFM0008",
-      "title": "Path-prefix portability for generated sites",
-      "status": "active",
-      "milestone": "Help & Docs Surfaces",
-      "priority": "Medium",
-      "effort": 5,
-      "depends_on": [],
-      "owner": "jereme",
-      "collaborators": [],
-      "summary": "Make wtfm's root-absolute page, breadcrumb, asset, and help-document URLs compose through Eleventy's HtmlBasePlugin with pathPrefix, verified by a real site built and inspected under /help/."
-    },
-    {
       "id": "WTFM0001",
       "title": "Publish @taprootio/wtfm to the public npm registry",
       "status": "completed",
@@ -127,6 +115,19 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Give every rendered heading a deterministic, collision-safe id — namespaced on composed surfaces and exactly overridable from Markdown or CEM metadata — so reference docs remain stable and authored help anchors can match Espalier field-names.",
+      "completed_on": "2026-07-23"
+    },
+    {
+      "id": "WTFM0008",
+      "title": "Path-prefix portability for generated sites",
+      "status": "completed",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "Medium",
+      "effort": 5,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Make wtfm's root-absolute page, breadcrumb, asset, and help-document URLs compose through Eleventy's HtmlBasePlugin with pathPrefix, verified by a real site built and inspected under /help/.",
       "completed_on": "2026-07-23"
     }
   ]

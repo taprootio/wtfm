@@ -278,7 +278,13 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
 
   // ── Asset filter ─────────────────────────────────────────────
   eleventyConfig.addFilter("asset", function (value) {
-    const manifest = this.data.manifest;
+    // JavaScript templates expose data under `this.data`; Liquid and other
+    // Eleventy engines expose cascade values directly on the filter context.
+    const manifest =
+      this?.data?.manifest ??
+      this?.manifest ??
+      this?.context?.get?.(["manifest"]) ??
+      this?.ctx?.get?.(["manifest"]);
     if (manifest && manifest[value]) {
       return `${manifest[value]}`;
     }

@@ -1,5 +1,8 @@
+import { normalizeUrlPrefix } from "../urls.js";
+
 export default function manifest(options = {}) {
   const { fileName = "manifest.json", prefix = "/dist/" } = options;
+  const normalizedPrefix = normalizeUrlPrefix(prefix);
 
   return {
     name: "wtfm-manifest",
@@ -11,7 +14,7 @@ export default function manifest(options = {}) {
         const originalName = chunkOrAsset.name;
 
         if (originalName) {
-          manifest[originalName] = `${prefix}${outputFileName}`;
+          manifest[originalName] = `${normalizedPrefix}${outputFileName}`;
         }
       }
 

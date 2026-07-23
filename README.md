@@ -16,6 +16,7 @@ npm install --save-dev @taprootio/wtfm
 - `/type-extractor` — TypeScript type extraction for manifest docs.
 - `/renderers` — section renderers for manifest-driven doc pages.
 - `/anchors` — the shared slug, explicit-id, and Markdown anchor helpers.
+- `/urls` — root-absolute and document-relative URL helpers.
 - `/data/components`, `/data/types`, `/data/manifest` — data helpers.
 - `/bundler/manifest`, `/bundler/copy-assets` — bundler plugins.
 - `/client/runtime`, `/client/code-block`, `/client/theme`, `/client/oklch` —
@@ -53,3 +54,31 @@ helpAnchor: {
 When component docs are composed into a surface, generated ids are namespaced
 by custom-element tag (for example `article-fields--attributes`). Explicit ids
 are never changed or namespaced.
+
+## Path-prefixed Eleventy sites
+
+WTFM emits internal page, breadcrumb, and bundler-manifest asset URLs as
+root-absolute paths. Do not add the deployment prefix to those values. Let
+Eleventy apply it once to final HTML with `HtmlBasePlugin`:
+
+```js
+import { HtmlBasePlugin } from "@11ty/eleventy";
+import wtfmPlugin from "@taprootio/wtfm";
+
+export default function (eleventyConfig) {
+  eleventyConfig.addPlugin(HtmlBasePlugin);
+  eleventyConfig.addPlugin(wtfmPlugin, {
+    cemPath: "custom-elements.json",
+  });
+}
+
+export const config = {
+  pathPrefix: "/help/",
+};
+```
+
+This transforms `/components/button/` and `/dist/docs.js` to
+`/help/components/button/` and `/help/dist/docs.js` in built HTML while leaving
+external and fragment-only URLs unchanged. `inlineSvg` reads and returns file
+content and therefore needs no URL prefix. The WTFM client runtime constructs
+no asset or navigation URLs of its own.
