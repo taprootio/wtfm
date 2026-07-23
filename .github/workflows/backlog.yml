@@ -1,0 +1,18 @@
+name: Backlog Hygiene
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  backlog:
+    name: backlog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      # The repo .npmrc routes @taprootio to GitHub Packages, where Trellis is
+      # not published — resolve it from the public registry instead. Drop the
+      # override when the .npmrc scope routing is removed (WTFM0001).
+      - run: npx --yes --@taprootio:registry=https://registry.npmjs.org @taprootio/trellis check
