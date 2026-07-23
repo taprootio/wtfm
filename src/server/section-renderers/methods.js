@@ -17,12 +17,14 @@ export const methodsRenderer = {
 
     const introText = resolveIntro(this.intro, decl.tagName, methods.length);
     const cemContext = buildCemContext(decl, options);
-    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
+    const headingOffset = options.headingOffset ?? 0;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const method of methods) {
       result += await buildDocSection(method.name, method.description, "", cemContext, {
         prefix: options.anchorPrefix,
         override: method.helpAnchor,
+        level: 3 + headingOffset,
       });
     }
     return result;

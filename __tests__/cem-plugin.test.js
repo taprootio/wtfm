@@ -179,6 +179,26 @@ export class TitleField {}
       helpAnchor: { name: "Title", description: "" },
     });
   });
+
+  it("recovers documentation surface metadata", () => {
+    const source = `
+/**
+ * @docSurface settings
+ * @docSurfaceTitle Settings Surface
+ * @docSurfaceParts surface-shell, surface-panel
+ */
+export class SurfaceShell {}
+`;
+    expect(recoverTagsFromSource(source, [
+      "docSurface",
+      "docSurfaceTitle",
+      "docSurfaceParts",
+    ])).toEqual({
+      docSurface: { name: "settings", description: "" },
+      docSurfaceTitle: { name: "Settings", description: "Surface" },
+      docSurfaceParts: { name: "surface-shell,", description: "surface-panel" },
+    });
+  });
 });
 
 // ── wtfmCemPlugin (full integration) ─────────────────────────────

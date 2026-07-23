@@ -12,7 +12,8 @@ export const eventsRenderer = {
 
     const introText = resolveIntro(this.intro, decl.tagName, decl.events.length);
     const cemContext = buildCemContext(decl, options);
-    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
+    const headingOffset = options.headingOffset ?? 0;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const event of decl.events) {
       result += await buildDocSection(
@@ -20,7 +21,11 @@ export const eventsRenderer = {
         event.description,
         `\`${event.name}\` is of type \`${event.type?.text || ""}\`.`,
         cemContext,
-        { prefix: options.anchorPrefix, override: event.helpAnchor },
+        {
+          prefix: options.anchorPrefix,
+          override: event.helpAnchor,
+          level: 3 + headingOffset,
+        },
       );
     }
     return result;

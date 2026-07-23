@@ -19,12 +19,14 @@ export const cssPartsRenderer = {
       decl.cssParts.length,
     );
     const cemContext = buildCemContext(decl, options);
-    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
+    const headingOffset = options.headingOffset ?? 0;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const part of decl.cssParts) {
       result += await buildDocSection(part.name, part.description, "", cemContext, {
         prefix: options.anchorPrefix,
         override: part.helpAnchor,
+        level: 3 + headingOffset,
       });
     }
     return result;

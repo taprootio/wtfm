@@ -18,7 +18,8 @@ export const propertiesRenderer = {
       decl.name ?? decl.tagName,
       members.length,
     );
-    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
+    const headingOffset = options.headingOffset ?? 0;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const member of members) {
       // If the member has no description, synthesize one from the type.
@@ -38,7 +39,11 @@ export const propertiesRenderer = {
         description,
         postDescription,
         null,
-        { prefix: options.anchorPrefix, override: member.helpAnchor },
+        {
+          prefix: options.anchorPrefix,
+          override: member.helpAnchor,
+          level: 3 + headingOffset,
+        },
       );
     }
     return result;

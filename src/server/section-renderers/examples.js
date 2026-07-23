@@ -52,6 +52,7 @@ export const examplesRenderer = {
  */
 async function renderExampleBlocks(examples, tagName, heading, cemContext, options = {}) {
   const blocks = [];
+  const headingOffset = options.headingOffset ?? 0;
 
   for (const example of examples) {
     const htmlCode = extractHtmlFromBody(example.body);
@@ -63,7 +64,7 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext, optio
 
     let block = "";
     if (title) {
-      block += `\n${renderAnchoredHeading(3, title, {
+      block += `\n${renderAnchoredHeading(3 + headingOffset, title, {
         prefix: options.anchorPrefix,
         override: example.helpAnchor,
       })}\n\n`;
@@ -77,7 +78,7 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext, optio
 
   if (blocks.length === 0) return "";
 
-  return `\n${renderAnchoredHeading(2, heading, {
+  return `\n${renderAnchoredHeading(2 + headingOffset, heading, {
     prefix: options.anchorPrefix,
   })}\n\n${blocks.join("\n")}`;
 }

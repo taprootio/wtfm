@@ -17,7 +17,9 @@ npm install --save-dev @taprootio/wtfm
 - `/renderers` — section renderers for manifest-driven doc pages.
 - `/anchors` — the shared slug, explicit-id, and Markdown anchor helpers.
 - `/urls` — root-absolute and document-relative URL helpers.
-- `/data/components`, `/data/types`, `/data/manifest` — data helpers.
+- `/surfaces` — surface collection and validation helpers.
+- `/data/components`, `/data/surfaces`, `/data/types`, `/data/manifest` — data
+  helpers.
 - `/bundler/manifest`, `/bundler/copy-assets` — bundler plugins.
 - `/client/runtime`, `/client/code-block`, `/client/theme`, `/client/oklch` —
   client-side runtime pieces.
@@ -54,6 +56,47 @@ helpAnchor: {
 When component docs are composed into a surface, generated ids are namespaced
 by custom-element tag (for example `article-fields--attributes`). Explicit ids
 are never changed or namespaced.
+
+## Composed documentation surfaces
+
+A surface is an ordered group of custom elements with one reference page and
+one separately authored help page. Declare its stable identity and members on
+the owning custom element:
+
+```js
+/**
+ * @docSurface settings
+ * @docSurfaceTitle Settings Surface
+ * @docSurfaceParts surface-shell, surface-panel
+ * @menuLabel Settings
+ * @menuOrder 3
+ */
+export class SurfaceShell extends HTMLElement {}
+```
+
+Register the same tags with `jsDocTagsPlugin` when generating the CEM:
+
+```js
+const surfaceTags = Object.fromEntries(
+  ["docSurface", "docSurfaceTitle", "docSurfaceParts"].map((name) => [
+    name,
+    { type: "string", tagMapping: name },
+  ]),
+);
+```
+
+The plugin exposes validated surfaces as `docSurfaces` global data and provides
+`renderSurfaceDocs(slug)` for the reference page. The default routes are
+`/surfaces/<slug>/` and `/surfaces/<slug>/help/`; consumers can supply
+`referenceUrlBuilder` and `helpUrlBuilder` plugin options to own those routes.
+Use `/data/surfaces` when a separate pagination data file is preferable.
+
+Surface member order follows `@docSurfaceParts`. Unknown or ambiguous member
+tags, duplicate slugs or members, missing metadata, and invalid slugs stop the
+build with an actionable error. Existing `@menuLabel`, `@menuIcon`,
+`@menuGroup`, and `@menuOrder` metadata is reused for navigation.
+Surface slugs and their derived URLs are permanent link targets; renaming one
+after release is a breaking documentation change.
 
 ## Path-prefixed Eleventy sites
 

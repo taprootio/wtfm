@@ -15,6 +15,9 @@ const DEFAULT_TAGS = [
   "docPageTitle",
   "docSections",
   "helpAnchor",
+  "docSurface",
+  "docSurfaceTitle",
+  "docSurfaceParts",
 ];
 
 /**

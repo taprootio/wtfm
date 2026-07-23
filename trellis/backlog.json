@@ -9,8 +9,8 @@
   ],
   "nextId": "WTFM0009",
   "counts": {
-    "active": 4,
-    "completed": 4,
+    "active": 3,
+    "completed": 5,
     "removed": 0
   },
   "tasks": [
@@ -31,20 +31,6 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
-    },
-    {
-      "id": "WTFM0005",
-      "title": "Surface pages — one doc page per unit of display",
-      "status": "active",
-      "milestone": "Help & Docs Surfaces",
-      "priority": "High",
-      "effort": 8,
-      "depends_on": [
-        "WTFM0004"
-      ],
-      "owner": "jereme",
-      "collaborators": [],
-      "summary": "Let one component define a named surface and its ordered reusable member components, then generate pagination data and a namespaced composed reference page for that unit of display while keeping component pages unchanged."
     },
     {
       "id": "WTFM0006",
@@ -115,6 +101,21 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Give every rendered heading a deterministic, collision-safe id — namespaced on composed surfaces and exactly overridable from Markdown or CEM metadata — so reference docs remain stable and authored help anchors can match Espalier field-names.",
+      "completed_on": "2026-07-23"
+    },
+    {
+      "id": "WTFM0005",
+      "title": "Surface pages — one doc page per unit of display",
+      "status": "completed",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "High",
+      "effort": 8,
+      "depends_on": [
+        "WTFM0004"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Let one component define a named surface and its ordered reusable member components, then generate pagination data and a namespaced composed reference page for that unit of display while keeping component pages unchanged.",
       "completed_on": "2026-07-23"
     },
     {

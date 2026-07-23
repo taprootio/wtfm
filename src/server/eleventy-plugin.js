@@ -9,7 +9,8 @@ import {
   defaultTypeSections,
 } from "./section-renderers/index.js";
 import { buildCemContext } from "./section-renderers/build-cem-context.js";
-import { configureMarkdownAnchors } from "./anchors.js";
+import { configureMarkdownAnchors, renderAnchoredHeading } from "./anchors.js";
+import { collectSurfaces, findSurface } from "./surfaces.js";
 
 /**
  * Reads the @docSections tag from a CEM declaration and returns
@@ -185,6 +186,8 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     githubLinkTemplate,
     sections,
     customRenderers,
+    referenceUrlBuilder,
+    helpUrlBuilder,
   } = options;
 
   // ── Resolved options (passed to every renderer) ───────────────
@@ -259,6 +262,11 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     typeManifest = { modules: [] };
   }
 
+  const surfaces = collectSurfaces(customElements, {
+    referenceUrlBuilder,
+    helpUrlBuilder,
+  });
+
   // ── Markdown-it with mathjax3 ────────────────────────────────
   const mdOptions = {
     html: true,
@@ -303,18 +311,23 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     }
   });
 
-  // ── renderDocs shortcode ─────────────────────────────────────
-  eleventyConfig.addShortcode("renderDocs", async function (declName) {
+  // ── Declaration renderer ─────────────────────────────────────
+  async function renderDeclaration(declaration, renderOverrides = {}) {
     // ── 1. Look up declaration ───────────────────────────────────
     // Search the CEM first, then fall back to the type manifest.
-    let decl;
-    let isComponentDecl = false;
+    let decl = typeof declaration === "object" ? declaration : undefined;
+    let isComponentDecl = !!decl?.tagName;
+    const declName = typeof declaration === "string"
+      ? declaration
+      : declaration?.name;
 
-    for (const mod of customElements.modules) {
-      decl = mod.declarations?.find((d) => d.name === declName);
-      if (decl) {
-        isComponentDecl = !!decl.tagName;
-        break;
+    if (!decl) {
+      for (const mod of customElements.modules) {
+        decl = mod.declarations?.find((d) => d.name === declName);
+        if (decl) {
+          isComponentDecl = !!decl.tagName;
+          break;
+        }
       }
     }
 
@@ -379,7 +392,9 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
         codeIdx = cleanDescription.indexOf("```html", codeIdx + codeBlock.length);
       }
 
-      result = `
+      result = renderOverrides.includeHeader === false
+        ? `\n${cleanDescription}\n`
+        : `
 <div class="doc-header">
 
 \`<${decl.tagName}>\`${githubLink}
@@ -409,7 +424,9 @@ ${cleanDescription}
         }
       }
 
-      result = `
+      result = renderOverrides.includeHeader === false
+        ? `\n${decl.description || ""}\n`
+        : `
 <div class="doc-header">
 
 \`${headerName}\`${githubLink}
@@ -495,7 +512,36 @@ type ${decl.name} = ${decl.type.text}
         console.warn(`wtfm: Unknown section renderer "${key}"`);
         continue;
       }
-      result += await renderer.render(decl, resolvedOptions);
+      result += await renderer.render(decl, {
+        ...resolvedOptions,
+        ...renderOverrides,
+      });
+    }
+
+    return result;
+  }
+
+  // ── renderDocs shortcode ─────────────────────────────────────
+  eleventyConfig.addShortcode("renderDocs", async function (declName) {
+    return renderDeclaration(declName);
+  });
+
+  // ── renderSurfaceDocs shortcode ──────────────────────────────
+  eleventyConfig.addShortcode("renderSurfaceDocs", async function (slug) {
+    const surface = findSurface(surfaces, slug);
+    let result = "";
+
+    for (const member of surface.members) {
+      result += `\n${renderAnchoredHeading(
+        2,
+        `\`<${member.tagName}>\``,
+        { override: member.tagName },
+      )}\n`;
+      result += await renderDeclaration(member, {
+        anchorPrefix: member.tagName,
+        headingOffset: 1,
+        includeHeader: false,
+      });
     }
 
     return result;
@@ -503,6 +549,7 @@ type ${decl.name} = ${decl.type.text}
 
   // ── Global data ──────────────────────────────────────────────
   eleventyConfig.addGlobalData("customElements", customElements);
+  eleventyConfig.addGlobalData("docSurfaces", surfaces);
   if (typeManifestPath) {
     eleventyConfig.addGlobalData("typeManifest", typeManifest);
   }

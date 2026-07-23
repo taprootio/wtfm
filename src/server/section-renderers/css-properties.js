@@ -16,12 +16,14 @@ export const cssPropertiesRenderer = {
       decl.cssProperties.length,
     );
     const cemContext = buildCemContext(decl, options);
-    let result = `\n${renderAnchoredHeading(2, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
+    const headingOffset = options.headingOffset ?? 0;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const prop of decl.cssProperties) {
       result += await buildDocSection(prop.name, prop.description, "", cemContext, {
         prefix: options.anchorPrefix,
         override: prop.helpAnchor,
+        level: 3 + headingOffset,
       });
     }
     return result;

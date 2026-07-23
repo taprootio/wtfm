@@ -141,6 +141,13 @@ describe("wtfmPlugin", () => {
     expect(typeof config.shortcodes.renderDocs).toBe("function");
   });
 
+  it("registers the surface shortcode and global data", () => {
+    const config = createMockEleventyConfig();
+    wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+    expect(config.shortcodes).toHaveProperty("renderSurfaceDocs");
+    expect(config.globalData.docSurfaces).toEqual([]);
+  });
+
   it("registers the inlineSvg shortcode", () => {
     const config = createMockEleventyConfig();
     wtfmPlugin(config, { cemPath: "/fake/cem.json" });
@@ -663,6 +670,71 @@ describe("wtfmPlugin", () => {
       const result = await config.shortcodes.renderDocs("TestWidget");
       // Should render as component (from CEM), not as a type
       expect(result).toContain("<test-widget>");
+    });
+  });
+
+  describe("renderSurfaceDocs shortcode", () => {
+    it("composes members in declared order with namespaced anchors", async () => {
+      const surfaceCem = {
+        modules: [{
+          declarations: [
+            {
+              name: "SurfacePanel",
+              tagName: "surface-panel",
+              description: "Panel docs.",
+              attributes: [{
+                name: "label",
+                description: "Panel label.",
+                default: '""',
+              }],
+            },
+            {
+              name: "SurfaceShell",
+              tagName: "surface-shell",
+              description: "Shell docs.",
+              docSurface: { name: "settings" },
+              docSurfaceTitle: { name: "Settings", description: "Surface" },
+              docSurfaceParts: {
+                name: "surface-shell,",
+                description: "surface-panel",
+              },
+              docSections: { name: "attributes" },
+              attributes: [{
+                name: "heading",
+                description: "Shell heading.",
+                default: '""',
+                helpAnchor: { name: "ShellHeading" },
+              }],
+            },
+          ],
+        }],
+      };
+      readFileSync.mockReturnValue(JSON.stringify(surfaceCem));
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+
+      const result = await config.shortcodes.renderSurfaceDocs("settings");
+      expect(result.indexOf("`<surface-shell>`")).toBeLessThan(
+        result.indexOf("`<surface-panel>`"),
+      );
+      expect(result).toContain("## `<surface-shell>` {#surface-shell}");
+      expect(result).toContain("### Attributes {#surface-shell--attributes}");
+      expect(result).toContain("#### heading {#ShellHeading}");
+      expect(result).toContain("### Attributes {#surface-panel--attributes}");
+      expect(result).toContain("#### label {#surface-panel--label}");
+      expect(result).not.toContain('<div class="doc-header">');
+
+      const html = config.shortcodes.renderMarkdown(result);
+      expect(html).toContain('id="surface-shell--attributes"');
+      expect(html).toContain('id="surface-panel--label"');
+    });
+
+    it("rejects unknown surface slugs", async () => {
+      const config = createMockEleventyConfig();
+      wtfmPlugin(config, { cemPath: "/fake/cem.json" });
+      await expect(config.shortcodes.renderSurfaceDocs("missing")).rejects.toThrow(
+        'Unknown documentation surface "missing"',
+      );
     });
   });
 });

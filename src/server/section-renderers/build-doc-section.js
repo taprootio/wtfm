@@ -30,6 +30,7 @@ function buildCemScript(cemContext) {
  * @param {object} [anchorOptions] - Stable heading anchor options
  * @param {string} [anchorOptions.prefix] - Namespace for generated ids
  * @param {object|string} [anchorOptions.override] - Exact @helpAnchor value
+ * @param {number} [anchorOptions.level=3] - Heading level for this item
  * @returns {Promise<string>} Formatted markdown string
  */
 export async function buildDocSection(
@@ -48,6 +49,7 @@ export async function buildDocSection(
     return "";
   }
 
+  const { level = 3, ...resolvedAnchorOptions } = anchorOptions;
   const descriptionParts = [];
 
   let htmlIndex = description.indexOf("```html");
@@ -82,7 +84,7 @@ export async function buildDocSection(
   let result = `
 <div class="doc-section">
 
-${renderAnchoredHeading(3, title, anchorOptions)}
+${renderAnchoredHeading(level, title, resolvedAnchorOptions)}
 
 ${postDescription}
 
