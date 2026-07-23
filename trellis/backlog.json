@@ -7,10 +7,10 @@
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0009",
+  "nextId": "WTFM0010",
   "counts": {
     "active": 1,
-    "completed": 7,
+    "completed": 8,
     "removed": 0
   },
   "tasks": [
@@ -131,6 +131,21 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Make wtfm's root-absolute page, breadcrumb, asset, and help-document URLs compose through Eleventy's HtmlBasePlugin with pathPrefix, verified by a real site built and inspected under /help/.",
+      "completed_on": "2026-07-23"
+    },
+    {
+      "id": "WTFM0009",
+      "title": "Retarget the client runtime at @taprootio/espalier",
+      "status": "completed",
+      "milestone": "Alpha",
+      "priority": "High",
+      "effort": 2,
+      "depends_on": [
+        "WTFM0001"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Rename the client runtime's optional peer dependency and import from the legacy @taprootio/taproot-controls package to the public @taprootio/espalier name, so Espalier's repo can drop its GitHub Packages scope routing entirely.",
       "completed_on": "2026-07-23"
     }
   ]

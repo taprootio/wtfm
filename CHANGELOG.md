@@ -1,3 +1,29 @@
+## [0.15.0](https://github.com/taprootio/wtfm/compare/v0.14.0...v0.15.0) (2026-07-23)
+
+
+### ⚠ Breaking changes
+
+* the client runtime's optional peer dependency is now
+  `@taprootio/espalier` (>=2.0.0) instead of the legacy GitHub Packages-only
+  `@taprootio/taproot-controls`; `wtfm-code-block` imports `EspalierElementBase`
+  from the public package (WTFM0009)
+
+## [0.14.0](https://github.com/taprootio/wtfm/compare/v0.13.1...v0.14.0) (2026-07-23)
+
+
+### Features
+
+* stable heading anchors with `{#ExactId}` and `@helpAnchor` overrides;
+  duplicate ids fail the build (WTFM0004)
+* composed documentation surfaces — `@docSurface` tags, `renderSurfaceDocs`,
+  `docSurfaces` data (WTFM0005)
+* authored help documents conforming to the ESP0119 strip-to-bare contract via
+  `renderHelpDocs` / `renderHelpDocument` (WTFM0006)
+* versioned `help-manifest.json` output and the `wtfm-check-help-anchors`
+  drift checker (WTFM0007)
+* path-prefix portability through Eleventy `HtmlBasePlugin` for serving under
+  `/help/` (WTFM0008)
+
 ## [0.13.1](https://github.com/taprootio/wtfm/compare/v0.13.0...v0.13.1) (2026-07-23)
 
 
