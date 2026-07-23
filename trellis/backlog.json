@@ -2,17 +2,102 @@
   "prefix": "WTFM",
   "milestones": [
     "Alpha",
+    "Help & Docs Surfaces",
     "Beta",
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0003",
+  "nextId": "WTFM0009",
   "counts": {
-    "active": 0,
+    "active": 6,
     "completed": 2,
     "removed": 0
   },
   "tasks": [
+    {
+      "id": "WTFM0003",
+      "title": "Epic — wtfm support for Taproot's Help & Docs Surfaces initiative",
+      "status": "active",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "High",
+      "effort": 2,
+      "depends_on": [
+        "WTFM0004",
+        "WTFM0005",
+        "WTFM0006",
+        "WTFM0007",
+        "WTFM0008"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, surface pages, an ESP0119-conformant help-document mode, a help manifest with drift checking, and path-prefix portability — coordinating sequencing and the cross-repo contracts."
+    },
+    {
+      "id": "WTFM0004",
+      "title": "Emit stable heading anchors across rendered docs",
+      "status": "active",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "High",
+      "effort": 5,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Give every rendered heading a deterministic, documented id — section headings, per-item headings, and markdown guide content — with a JSDoc override tag so anchors can be pinned to Espalier field-names, making wtfm output URL-addressable at section granularity."
+    },
+    {
+      "id": "WTFM0005",
+      "title": "Surface pages — one doc page per unit of display",
+      "status": "active",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "High",
+      "effort": 8,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Let components declare membership in a named surface (a unit of display like a page editor or form) and generate one composed doc page per surface — declaration tags, a surfaces data helper for nav and URLs, and rendering that composes member components in order."
+    },
+    {
+      "id": "WTFM0006",
+      "title": "Help-document output mode conforming to ESP0119 strip-to-bare",
+      "status": "active",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "High",
+      "effort": 8,
+      "depends_on": [
+        "WTFM0004",
+        "WTFM0005"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "A lean render mode that emits one help document per surface whose markup survives Espalier ESP0119's strip-to-bare normalization — semantic elements and stable field-name anchors only, plain code instead of interactive demos — so fetched help renders cleanly inside the flyout."
+    },
+    {
+      "id": "WTFM0007",
+      "title": "Help manifest and anchor drift check",
+      "status": "active",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "Medium",
+      "effort": 3,
+      "depends_on": [
+        "WTFM0005",
+        "WTFM0006"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Emit a machine-readable help manifest (surface → URLs → anchor list) at build time and ship a check command that fails when a consumer-supplied expected-anchor list no longer matches the built docs — turning silent anchor drift into a CI failure."
+    },
+    {
+      "id": "WTFM0008",
+      "title": "Path-prefix portability for generated sites",
+      "status": "active",
+      "milestone": "Help & Docs Surfaces",
+      "priority": "Medium",
+      "effort": 3,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Make wtfm-generated URLs, breadcrumbs, nav data, and client-asset references compose correctly with an Eleventy pathPrefix so a docs site can serve from a sub-path like /help/ on an app origin — the serving contract Taproot's help site depends on."
+    },
     {
       "id": "WTFM0001",
       "title": "Publish @taprootio/wtfm to the public npm registry",
