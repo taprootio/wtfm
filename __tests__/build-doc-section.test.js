@@ -47,6 +47,18 @@ describe("buildDocSection", () => {
     expect(decoded).toContain('label="Hi"');
   });
 
+  it("prefixes root-absolute URLs before encoding demo HTML", async () => {
+    const desc = '```html\n<img src="/assets/demo.png">\n```';
+    const result = await buildDocSection("demo", desc, "", {
+      tagName: "my-widget",
+      cemJson: "{}",
+      pathPrefix: "/help/",
+    });
+    const match = result.match(/source="([A-Za-z0-9+/=]+)"/);
+    const decoded = Buffer.from(match[1], "base64").toString();
+    expect(decoded).toContain('src="/help/assets/demo.png"');
+  });
+
   it("handles multiple ```html blocks", async () => {
     const desc =
       'Text.\n\n```html\n<a></a>\n```\n\nMiddle.\n\n```html\n<b></b>\n```';

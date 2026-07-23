@@ -1,5 +1,7 @@
 import * as prettier from "prettier";
 import { buildCemContext } from "./build-cem-context.js";
+import { renderAnchoredHeading } from "../anchors.js";
+import { applyPathPrefixToHtml } from "../urls.js";
 
 /**
  * Section renderer that emits interactive `<wtfm-code-block>` elements
@@ -29,7 +31,13 @@ export const examplesRenderer = {
     if (!decl.examples?.length) return "";
 
     const cemContext = buildCemContext(decl, options);
-    return renderExampleBlocks(decl.examples, decl.tagName, this.heading, cemContext);
+    return renderExampleBlocks(
+      decl.examples,
+      decl.tagName,
+      this.heading,
+      cemContext,
+      options,
+    );
   },
 };
 
@@ -40,22 +48,31 @@ export const examplesRenderer = {
  * @param {string} tagName
  * @param {string} heading  Section heading (from the renderer instance).
  * @param {object} cemContext
+ * @param {object} options
  * @returns {Promise<string>}
  */
-async function renderExampleBlocks(examples, tagName, heading, cemContext) {
+async function renderExampleBlocks(examples, tagName, heading, cemContext, options = {}) {
   const blocks = [];
+  const headingOffset = options.headingOffset ?? 0;
 
   for (const example of examples) {
     const htmlCode = extractHtmlFromBody(example.body);
     if (!htmlCode) continue;
 
     const formatted = await formatHtml(htmlCode);
-    const encoded = Buffer.from(formatted).toString("base64");
+    const prefixedHtml = await applyPathPrefixToHtml(
+      formatted,
+      options.pathPrefix,
+    );
+    const encoded = Buffer.from(prefixedHtml).toString("base64");
     const title = example.title || "";
 
     let block = "";
     if (title) {
-      block += `\n### ${title}\n\n`;
+      block += `\n${renderAnchoredHeading(3 + headingOffset, title, {
+        prefix: [options.anchorPrefix, "examples"],
+        override: example.helpAnchor,
+      })}\n\n`;
     }
     block += `<wtfm-code-block tag-name="${tagName}" source="${encoded}">
   <script type="application/json">${cemContext.cemJson}</script>
@@ -66,7 +83,9 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext) {
 
   if (blocks.length === 0) return "";
 
-  return `\n## ${heading}\n\n${blocks.join("\n")}`;
+  return `\n${renderAnchoredHeading(2 + headingOffset, heading, {
+    prefix: options.anchorPrefix,
+  })}\n\n${blocks.join("\n")}`;
 }
 
 /**

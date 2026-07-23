@@ -2,6 +2,7 @@ import markdownIt from "markdown-it";
 import mathjax3 from "markdown-it-mathjax3";
 import * as prettier from "prettier";
 import { readFileSync } from "fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "path";
 import {
   defaultRenderers,
@@ -9,6 +10,15 @@ import {
   defaultTypeSections,
 } from "./section-renderers/index.js";
 import { buildCemContext } from "./section-renderers/build-cem-context.js";
+import {
+  configureMarkdownAnchors,
+  contextualizeAnchorError,
+  renderAnchoredHeading,
+} from "./anchors.js";
+import { collectSurfaces, findSurface } from "./surfaces.js";
+import { renderHelpDocument } from "./help-document.js";
+import { buildHelpManifest } from "./help-manifest.js";
+import { applyPathPrefixToHtml } from "./urls.js";
 
 /**
  * Reads the @docSections tag from a CEM declaration and returns
@@ -83,6 +93,10 @@ function buildFunctionSignature(decl) {
  *   for a web component or type declaration by looking up its
  *   declaration in the CEM (then the type manifest) and running
  *   all configured section renderers.
+ * - **`renderSurfaceDocs(slug)`** — composes reference docs for the ordered
+ *   members of a validated documentation surface.
+ * - **`renderHelpDocs(slug, markdown)`** — renders separately authored help
+ *   Markdown into lean semantic HTML for that surface's help route.
  * - **`inlineSvg(fileName)`** — reads an SVG file from `assetsDir`
  *   and returns its content inline (with the XML declaration stripped).
  *
@@ -94,6 +108,7 @@ function buildFunctionSignature(decl) {
  * ## Global data
  *
  * - **`customElements`** — the parsed Custom Elements Manifest object.
+ * - **`docSurfaces`** — validated documentation surfaces from the CEM.
  * - **`typeManifest`** — the parsed type manifest object (when provided).
  *
  * @param {object} eleventyConfig - The Eleventy configuration object
@@ -143,6 +158,11 @@ function buildFunctionSignature(decl) {
  *
  *   Signature: `(url: string) => string`
  *
+ * @param {(slug: string, surface: object) => string}
+ *   [options.referenceUrlBuilder] - Optional surface reference route builder.
+ * @param {(slug: string, surface: object) => string}
+ *   [options.helpUrlBuilder] - Optional surface help route builder.
+ *
  * @param {(string|{key: string})[]} [options.sections] - Array of
  *   section keys (or objects with a `key` property) defining the
  *   default rendering order.  When omitted, the built-in order is
@@ -184,6 +204,8 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     githubLinkTemplate,
     sections,
     customRenderers,
+    referenceUrlBuilder,
+    helpUrlBuilder,
   } = options;
 
   // ── Resolved options (passed to every renderer) ───────────────
@@ -193,7 +215,9 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     attributeExceptions,
     assetsDir,
     githubLinkTemplate,
+    pathPrefix: eleventyConfig.pathPrefix || "/",
   };
+  const pathPrefix = eleventyConfig.pathPrefix || "/";
 
   // ── Build the renderer registry ───────────────────────────────
   const rendererMap = new Map();
@@ -258,13 +282,18 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     typeManifest = { modules: [] };
   }
 
+  const surfaces = collectSurfaces(customElements, {
+    referenceUrlBuilder,
+    helpUrlBuilder,
+  });
+
   // ── Markdown-it with mathjax3 ────────────────────────────────
   const mdOptions = {
     html: true,
     breaks: false,
     linkify: true,
   };
-  const markdownLib = markdownIt(mdOptions).use(mathjax3);
+  const markdownLib = configureMarkdownAnchors(markdownIt(mdOptions).use(mathjax3));
   eleventyConfig.setLibrary("md", markdownLib);
 
   // ── Markdown filter for JS templates ────────────────────────
@@ -272,12 +301,22 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
   // same shared markdown-it instance registered above:
   //   return this.renderMarkdown(someMarkdownString);
   eleventyConfig.addShortcode("renderMarkdown", function (content) {
-    return markdownLib.render(content ?? "");
+    try {
+      return markdownLib.render(content ?? "");
+    } catch (error) {
+      throw contextualizeAnchorError(error, "Markdown document");
+    }
   });
 
   // ── Asset filter ─────────────────────────────────────────────
   eleventyConfig.addFilter("asset", function (value) {
-    const manifest = this.data.manifest;
+    // JavaScript templates expose data under `this.data`; Liquid and other
+    // Eleventy engines expose cascade values directly on the filter context.
+    const manifest =
+      this?.data?.manifest ??
+      this?.manifest ??
+      this?.context?.get?.(["manifest"]) ??
+      this?.ctx?.get?.(["manifest"]);
     if (manifest && manifest[value]) {
       return `${manifest[value]}`;
     }
@@ -296,18 +335,23 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     }
   });
 
-  // ── renderDocs shortcode ─────────────────────────────────────
-  eleventyConfig.addShortcode("renderDocs", async function (declName) {
+  // ── Declaration renderer ─────────────────────────────────────
+  async function renderDeclaration(declaration, renderOverrides = {}) {
     // ── 1. Look up declaration ───────────────────────────────────
     // Search the CEM first, then fall back to the type manifest.
-    let decl;
-    let isComponentDecl = false;
+    let decl = typeof declaration === "object" ? declaration : undefined;
+    let isComponentDecl = !!decl?.tagName;
+    const declName = typeof declaration === "string"
+      ? declaration
+      : declaration?.name;
 
-    for (const mod of customElements.modules) {
-      decl = mod.declarations?.find((d) => d.name === declName);
-      if (decl) {
-        isComponentDecl = !!decl.tagName;
-        break;
+    if (!decl) {
+      for (const mod of customElements.modules) {
+        decl = mod.declarations?.find((d) => d.name === declName);
+        if (decl) {
+          isComponentDecl = !!decl.tagName;
+          break;
+        }
       }
     }
 
@@ -360,7 +404,11 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
         // Encode the HTML as base64 so markdown-it cannot corrupt
         // content inside <script> or <style> blocks (e.g. indented
         // JS being treated as a markdown code fence).
-        const encoded = Buffer.from(formattedHtml.trim()).toString("base64");
+        const prefixedHtml = await applyPathPrefixToHtml(
+          formattedHtml.trim(),
+          resolvedOptions.pathPrefix,
+        );
+        const encoded = Buffer.from(prefixedHtml).toString("base64");
         const codeBlock = `<wtfm-code-block tag-name="${decl.tagName}" source="${encoded}">
   <script type="application/json">${cemContext.cemJson}</script>
 </wtfm-code-block>`;
@@ -372,7 +420,9 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
         codeIdx = cleanDescription.indexOf("```html", codeIdx + codeBlock.length);
       }
 
-      result = `
+      result = renderOverrides.includeHeader === false
+        ? `\n${cleanDescription}\n`
+        : `
 <div class="doc-header">
 
 \`<${decl.tagName}>\`${githubLink}
@@ -402,7 +452,9 @@ ${cleanDescription}
         }
       }
 
-      result = `
+      result = renderOverrides.includeHeader === false
+        ? `\n${decl.description || ""}\n`
+        : `
 <div class="doc-header">
 
 \`${headerName}\`${githubLink}
@@ -488,14 +540,84 @@ type ${decl.name} = ${decl.type.text}
         console.warn(`wtfm: Unknown section renderer "${key}"`);
         continue;
       }
-      result += await renderer.render(decl, resolvedOptions);
+      result += await renderer.render(decl, {
+        ...resolvedOptions,
+        ...renderOverrides,
+      });
+    }
+
+    return result;
+  }
+
+  // ── renderDocs shortcode ─────────────────────────────────────
+  eleventyConfig.addShortcode("renderDocs", async function (declName) {
+    const context = `declaration "${declName}"`;
+    let result;
+    try {
+      result = await renderDeclaration(declName);
+    } catch (error) {
+      throw contextualizeAnchorError(error, context);
+    }
+    try {
+      markdownLib.render(result);
+    } catch (error) {
+      throw contextualizeAnchorError(error, context);
+    }
+    return result;
+  });
+
+  // ── renderSurfaceDocs shortcode ──────────────────────────────
+  eleventyConfig.addShortcode("renderSurfaceDocs", async function (slug) {
+    const surface = findSurface(surfaces, slug);
+    const context = `surface "${slug}" reference document`;
+    let result = "";
+
+    try {
+      for (const member of surface.members) {
+        result += `\n${renderAnchoredHeading(
+          2,
+          `\`<${member.tagName}>\``,
+          { override: member.helpAnchor },
+        )}\n`;
+        result += await renderDeclaration(member, {
+          anchorPrefix: member.tagName,
+          headingOffset: 1,
+          includeHeader: false,
+        });
+      }
+      markdownLib.render(result);
+    } catch (error) {
+      throw contextualizeAnchorError(error, context);
     }
 
     return result;
   });
 
+  // ── renderHelpDocs shortcode ─────────────────────────────────
+  eleventyConfig.addShortcode("renderHelpDocs", function (slug, markdown) {
+    const surface = findSurface(surfaces, slug);
+    return renderHelpDocument(markdown, {
+      documentUrl: surface.helpUrl,
+      context: `surface "${slug}" help document`,
+    });
+  });
+
+  // ── Versioned help manifest ──────────────────────────────────
+  eleventyConfig.on("eleventy.after", async ({ directories, outputMode, results }) => {
+    if (outputMode !== "fs") return;
+    const manifest = buildHelpManifest(surfaces, results, { pathPrefix });
+    const outputDirectory = resolve(directories.output);
+    await mkdir(outputDirectory, { recursive: true });
+    await writeFile(
+      resolve(outputDirectory, "help-manifest.json"),
+      `${JSON.stringify(manifest, null, 2)}\n`,
+      "utf-8",
+    );
+  });
+
   // ── Global data ──────────────────────────────────────────────
   eleventyConfig.addGlobalData("customElements", customElements);
+  eleventyConfig.addGlobalData("docSurfaces", surfaces);
   if (typeManifestPath) {
     eleventyConfig.addGlobalData("typeManifest", typeManifest);
   }

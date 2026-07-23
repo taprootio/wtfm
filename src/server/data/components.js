@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { toRootAbsoluteUrl } from "../urls.js";
 
 /**
  * Combines the split tag value from @wc-toolkit/jsdoc-tags.
@@ -83,8 +84,9 @@ export default function createComponentsData(options = {}) {
     const raw = [];
     for (const mod of cem.modules) {
       const decl = mod.declarations?.find((d) => d.docUrl);
-      const url = tagValue(decl?.docUrl);
-      if (!url) continue;
+      const rawUrl = tagValue(decl?.docUrl);
+      if (!rawUrl) continue;
+      const url = toRootAbsoluteUrl(rawUrl);
 
       raw.push({
         className: decl.name,

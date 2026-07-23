@@ -14,6 +14,10 @@ const DEFAULT_TAGS = [
   "menuOrder",
   "docPageTitle",
   "docSections",
+  "helpAnchor",
+  "docSurface",
+  "docSurfaceTitle",
+  "docSurfaceParts",
 ];
 
 /**

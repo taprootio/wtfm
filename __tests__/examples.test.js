@@ -95,6 +95,22 @@ describe("examplesRenderer", () => {
     expect(decoded).toContain("<test-el>");
   });
 
+  it("prefixes root-absolute URLs before encoding examples", async () => {
+    const decl = {
+      ...minimalDecl,
+      tagName: "test-el",
+      examples: [{
+        title: "Asset",
+        body: '```html\n<img src="/assets/demo.png">\n```',
+      }],
+    };
+
+    const result = await examplesRenderer.render(decl, { pathPrefix: "/help/" });
+    const sourceMatch = result.match(/source="([^"]+)"/);
+    const decoded = Buffer.from(sourceMatch[1], "base64").toString("utf-8");
+    expect(decoded).toContain('src="/help/assets/demo.png"');
+  });
+
   // ── No examples ──────────────────────────────────────────────────
 
   it("returns empty string when declaration has no examples and no description", async () => {

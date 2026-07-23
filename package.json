@@ -3,6 +3,9 @@
   "version": "0.13.1",
   "description": "WTFM — documentation tooling for Custom Elements Manifest-based component libraries",
   "type": "module",
+  "bin": {
+    "wtfm-check-help-anchors": "./dist/server/check-help-anchors-cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/server/eleventy-plugin.d.ts",
@@ -24,9 +27,37 @@
       "types": "./dist/server/section-renderers/*.d.ts",
       "default": "./dist/server/section-renderers/*.js"
     },
+    "./anchors": {
+      "types": "./dist/server/anchors.d.ts",
+      "default": "./dist/server/anchors.js"
+    },
+    "./urls": {
+      "types": "./dist/server/urls.d.ts",
+      "default": "./dist/server/urls.js"
+    },
     "./data/components": {
       "types": "./dist/server/data/components.d.ts",
       "default": "./dist/server/data/components.js"
+    },
+    "./data/surfaces": {
+      "types": "./dist/server/data/surfaces.d.ts",
+      "default": "./dist/server/data/surfaces.js"
+    },
+    "./surfaces": {
+      "types": "./dist/server/surfaces.d.ts",
+      "default": "./dist/server/surfaces.js"
+    },
+    "./help-document": {
+      "types": "./dist/server/help-document.d.ts",
+      "default": "./dist/server/help-document.js"
+    },
+    "./help-manifest": {
+      "types": "./dist/server/help-manifest.d.ts",
+      "default": "./dist/server/help-manifest.js"
+    },
+    "./check-help-anchors": {
+      "types": "./dist/server/check-help-anchors.d.ts",
+      "default": "./dist/server/check-help-anchors.js"
     },
     "./data/types": {
       "types": "./dist/server/data/types.d.ts",
@@ -70,7 +101,7 @@
   ],
   "scripts": {
     "build": "npm run build:server && npm run build:client",
-    "build:server": "mkdir -p dist && rm -rf dist/server && cp -r src/server dist/server",
+    "build:server": "mkdir -p dist && rm -rf dist/server && cp -r src/server dist/server && tsc --project tsconfig.server.json",
     "build:client": "tsc --project tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -83,8 +114,12 @@
   "author": "Jereme Evans",
   "license": "ISC",
   "dependencies": {
+    "@11ty/posthtml-urls": "^1.0.3",
     "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.1",
+    "markdown-it-attrs": "^5.0.0",
     "markdown-it-mathjax3": "^5.2.0",
+    "posthtml": "^0.16.7",
     "prettier": "^3.6.2",
     "shiki": "^3.13.0"
   },
@@ -105,6 +140,7 @@
     }
   },
   "devDependencies": {
+    "@11ty/eleventy": "^3.1.6",
     "lit": "^3.2.1",
     "typescript": "~5.7.2",
     "vitest": "^4.0.18"

@@ -1,12 +1,13 @@
 import { buildDocSection } from "./build-doc-section.js";
 import { resolveIntro } from "./resolve-intro.js";
+import { renderAnchoredHeading } from "../anchors.js";
 
 export const propertiesRenderer = {
   key: "properties",
   heading: "Properties",
   intro: "`{name}` has the following properties:",
 
-  async render(decl) {
+  async render(decl, options = {}) {
     const members =
       decl.members?.filter((m) => m.kind === "field") ?? [];
 
@@ -17,7 +18,8 @@ export const propertiesRenderer = {
       decl.name ?? decl.tagName,
       members.length,
     );
-    let result = `\n## ${this.heading}\n\n${introText}\n\n`;
+    const headingOffset = options.headingOffset ?? 0;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const member of members) {
       // If the member has no description, synthesize one from the type.
@@ -36,6 +38,13 @@ export const propertiesRenderer = {
         member.name,
         description,
         postDescription,
+        null,
+        {
+          prefix: [options.anchorPrefix, this.key],
+          override: member.helpAnchor,
+          level: 3 + headingOffset,
+          pathPrefix: options.pathPrefix,
+        },
       );
     }
     return result;

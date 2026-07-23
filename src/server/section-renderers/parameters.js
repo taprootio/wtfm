@@ -1,12 +1,13 @@
 import { buildDocSection } from "./build-doc-section.js";
 import { resolveIntro } from "./resolve-intro.js";
+import { renderAnchoredHeading } from "../anchors.js";
 
 export const parametersRenderer = {
   key: "parameters",
   heading: "Parameters",
   intro: "`{name}` accepts the following parameters:",
 
-  async render(decl) {
+  async render(decl, options = {}) {
     const params = decl.parameters ?? [];
     if (params.length === 0) return "";
 
@@ -15,7 +16,8 @@ export const parametersRenderer = {
       decl.name ?? decl.tagName,
       params.length,
     );
-    let result = `\n## ${this.heading}\n\n${introText}\n\n`;
+    const headingOffset = options.headingOffset ?? 0;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
 
     for (const param of params) {
       const description =
@@ -37,6 +39,13 @@ export const parametersRenderer = {
         param.name,
         description,
         postParts.join(" "),
+        null,
+        {
+          prefix: [options.anchorPrefix, this.key],
+          override: param.helpAnchor,
+          level: 3 + headingOffset,
+          pathPrefix: options.pathPrefix,
+        },
       );
     }
     return result;

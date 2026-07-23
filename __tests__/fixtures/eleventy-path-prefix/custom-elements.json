@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "modules": [
+    {
+      "path": "surface-shell.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "SurfaceShell",
+          "customElement": true,
+          "tagName": "surface-shell",
+          "description": "The settings surface shell.\n\n```html\n<img src=\"/assets/demo.png\" alt=\"Demo\">\n```",
+          "docSurface": { "name": "settings", "description": "" },
+          "docSurfaceTitle": { "name": "Settings", "description": "Surface" },
+          "docSurfaceParts": {
+            "name": "surface-shell,",
+            "description": "surface-panel"
+          },
+          "docSections": { "name": "attributes", "description": "" },
+          "attributes": [
+            {
+              "name": "title",
+              "description": "The surface title.",
+              "default": "\"\"",
+              "helpAnchor": { "name": "Title", "description": "" }
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "name": "SurfacePanel",
+          "customElement": true,
+          "tagName": "surface-panel",
+          "description": "A settings panel.",
+          "docSections": { "name": "attributes", "description": "" },
+          "attributes": [
+            {
+              "name": "open",
+              "description": "Whether the panel is open.",
+              "default": "false"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

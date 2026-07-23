@@ -166,6 +166,39 @@ export class MyButton extends LitElement {}
     expect(result).not.toBeNull();
     expect(result.docUrl.name).toBe("/components/foo");
   });
+
+  it("recovers an exact helpAnchor value", () => {
+    const source = `
+/**
+ * Help for the title field.
+ * @helpAnchor Title
+ */
+export class TitleField {}
+`;
+    expect(recoverTagsFromSource(source, ["helpAnchor"])).toEqual({
+      helpAnchor: { name: "Title", description: "" },
+    });
+  });
+
+  it("recovers documentation surface metadata", () => {
+    const source = `
+/**
+ * @docSurface settings
+ * @docSurfaceTitle Settings Surface
+ * @docSurfaceParts surface-shell, surface-panel
+ */
+export class SurfaceShell {}
+`;
+    expect(recoverTagsFromSource(source, [
+      "docSurface",
+      "docSurfaceTitle",
+      "docSurfaceParts",
+    ])).toEqual({
+      docSurface: { name: "settings", description: "" },
+      docSurfaceTitle: { name: "Settings", description: "Surface" },
+      docSurfaceParts: { name: "surface-shell,", description: "surface-panel" },
+    });
+  });
 });
 
 // ── wtfmCemPlugin (full integration) ─────────────────────────────
