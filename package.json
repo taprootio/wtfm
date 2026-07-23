@@ -3,6 +3,9 @@
   "version": "0.13.1",
   "description": "WTFM — documentation tooling for Custom Elements Manifest-based component libraries",
   "type": "module",
+  "bin": {
+    "wtfm-check-help-anchors": "./dist/server/check-help-anchors-cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/server/eleventy-plugin.d.ts",
@@ -47,6 +50,14 @@
     "./help-document": {
       "types": "./dist/server/help-document.d.ts",
       "default": "./dist/server/help-document.js"
+    },
+    "./help-manifest": {
+      "types": "./dist/server/help-manifest.d.ts",
+      "default": "./dist/server/help-manifest.js"
+    },
+    "./check-help-anchors": {
+      "types": "./dist/server/check-help-anchors.d.ts",
+      "default": "./dist/server/check-help-anchors.js"
     },
     "./data/types": {
       "types": "./dist/server/data/types.d.ts",

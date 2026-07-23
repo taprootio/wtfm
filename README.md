@@ -19,6 +19,8 @@ npm install --save-dev @taprootio/wtfm
 - `/urls` — root-absolute and document-relative URL helpers.
 - `/surfaces` — surface collection and validation helpers.
 - `/help-document` — the restricted semantic Markdown renderer for help pages.
+- `/help-manifest`, `/check-help-anchors` — help link-index generation and
+  consumer compatibility checks.
 - `/data/components`, `/data/surfaces`, `/data/types`, `/data/manifest` — data
   helpers.
 - `/bundler/manifest`, `/bundler/copy-assets` — bundler plugins.
@@ -121,6 +123,49 @@ output contract.
 Pin field-level anchors with exact, case-sensitive heading ids such as
 `## Title {#Title}`. Relative links and images are resolved from the surface's
 help route into root-absolute URLs before Eleventy applies its `pathPrefix`.
+
+## Help manifest and anchor compatibility
+
+After a filesystem build, the Eleventy plugin writes `help-manifest.json` at
+the output root. Its versioned entries contain each surface slug, the final
+path-prefixed reference and help URLs, and help heading ids in document order:
+
+```json
+{
+  "schemaVersion": 1,
+  "surfaces": [
+    {
+      "slug": "settings",
+      "referenceUrl": "/help/surfaces/settings/",
+      "helpUrl": "/help/surfaces/settings/help/",
+      "anchors": ["settings-help", "Title"]
+    }
+  ]
+}
+```
+
+Consumers keep their field-name contract in a separate versioned file:
+
+```json
+{
+  "schemaVersion": 1,
+  "surfaces": {
+    "settings": ["Title"]
+  }
+}
+```
+
+Run the checker after the documentation build in consumer CI:
+
+```bash
+npx wtfm-check-help-anchors \
+  _site/help-manifest.json expected-help-anchors.json
+```
+
+Missing surfaces or anchors fail. Extra built surfaces and anchors warn by
+default because they may be intentional additions; pass `--strict` to make
+them fail too. Duplicate, malformed, and schema-version-mismatched inputs
+always fail.
 
 ## Path-prefixed Eleventy sites
 

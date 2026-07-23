@@ -2,6 +2,7 @@ import markdownIt from "markdown-it";
 import mathjax3 from "markdown-it-mathjax3";
 import * as prettier from "prettier";
 import { readFileSync } from "fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "path";
 import {
   defaultRenderers,
@@ -12,6 +13,7 @@ import { buildCemContext } from "./section-renderers/build-cem-context.js";
 import { configureMarkdownAnchors, renderAnchoredHeading } from "./anchors.js";
 import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
+import { buildHelpManifest } from "./help-manifest.js";
 
 /**
  * Reads the @docSections tag from a CEM declaration and returns
@@ -203,6 +205,7 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     assetsDir,
     githubLinkTemplate,
   };
+  const pathPrefix = eleventyConfig.pathPrefix || "/";
 
   // ── Build the renderer registry ───────────────────────────────
   const rendererMap = new Map();
@@ -556,6 +559,19 @@ type ${decl.name} = ${decl.type.text}
   eleventyConfig.addShortcode("renderHelpDocs", function (slug, markdown) {
     const surface = findSurface(surfaces, slug);
     return renderHelpDocument(markdown, { documentUrl: surface.helpUrl });
+  });
+
+  // ── Versioned help manifest ──────────────────────────────────
+  eleventyConfig.on("eleventy.after", async ({ directories, outputMode, results }) => {
+    if (outputMode !== "fs") return;
+    const manifest = buildHelpManifest(surfaces, results, { pathPrefix });
+    const outputDirectory = resolve(directories.output);
+    await mkdir(outputDirectory, { recursive: true });
+    await writeFile(
+      resolve(outputDirectory, "help-manifest.json"),
+      `${JSON.stringify(manifest, null, 2)}\n`,
+      "utf-8",
+    );
   });
 
   // ── Global data ──────────────────────────────────────────────

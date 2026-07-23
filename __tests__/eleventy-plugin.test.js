@@ -111,6 +111,7 @@ function createMockEleventyConfig() {
     shortcodes: {},
     filters: {},
     globalData: {},
+    events: {},
     library: null,
     addShortcode(name, fn) {
       config.shortcodes[name] = fn;
@@ -123,6 +124,9 @@ function createMockEleventyConfig() {
     },
     setLibrary(name, lib) {
       config.library = { name, lib };
+    },
+    on(name, fn) {
+      config.events[name] = fn;
     },
   };
   return config;
@@ -147,6 +151,7 @@ describe("wtfmPlugin", () => {
     expect(config.shortcodes).toHaveProperty("renderSurfaceDocs");
     expect(config.shortcodes).toHaveProperty("renderHelpDocs");
     expect(config.globalData.docSurfaces).toEqual([]);
+    expect(config.events).toHaveProperty("eleventy.after");
   });
 
   it("registers the inlineSvg shortcode", () => {

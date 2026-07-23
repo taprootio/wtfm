@@ -30,6 +30,17 @@ async function buildFixture(pathPrefix) {
   return {
     index: await readFile(path.join(outputDir, "index.html"), "utf-8"),
     guide: await readFile(path.join(outputDir, "guide/index.html"), "utf-8"),
+    surfaceReference: await readFile(
+      path.join(outputDir, "surfaces/settings/index.html"),
+      "utf-8",
+    ),
+    surfaceHelp: await readFile(
+      path.join(outputDir, "surfaces/settings/help/index.html"),
+      "utf-8",
+    ),
+    helpManifest: JSON.parse(
+      await readFile(path.join(outputDir, "help-manifest.json"), "utf-8"),
+    ),
   };
 }
 
@@ -47,6 +58,10 @@ describe("Eleventy path-prefix fixture", () => {
     expect(output.index).toContain('src="/help/dist/docs.123.js"');
     expect(output.guide).toContain('href="/help/components/widget/"');
     expect(output.guide).toContain('src="/help/assets/widget.png"');
+    expect(output.surfaceHelp).toContain('href="/help/guide/"');
+    expect(output.surfaceHelp).toContain(
+      'src="/help/surfaces/settings/help/images/settings.png"',
+    );
   });
 
   it("does not rewrite external links or fragment-only anchors", async () => {
@@ -63,5 +78,23 @@ describe("Eleventy path-prefix fixture", () => {
     expect(output.index).toContain('src="/assets/widget.png"');
     expect(output.index).toContain('src="/dist/docs.123.js"');
     expect(output.index).not.toContain("/help/");
+    expect(output.helpManifest.surfaces[0].helpUrl).toBe(
+      "/surfaces/settings/help/",
+    );
+  });
+
+  it("emits the versioned final surface and anchor manifest", async () => {
+    const output = await buildFixture("/help/");
+    expect(output.surfaceReference).toContain('id="surface-shell--attributes"');
+    expect(output.surfaceHelp).toContain('<h2 id="Title">Title</h2>');
+    expect(output.helpManifest).toEqual({
+      schemaVersion: 1,
+      surfaces: [{
+        slug: "settings",
+        referenceUrl: "/help/surfaces/settings/",
+        helpUrl: "/help/surfaces/settings/help/",
+        anchors: ["settings-help", "Title", "advanced-options"],
+      }],
+    });
   });
 });
