@@ -8,22 +8,23 @@
   ],
   "nextId": "WTFM0002",
   "counts": {
-    "active": 1,
-    "completed": 0,
+    "active": 0,
+    "completed": 1,
     "removed": 0
   },
   "tasks": [
     {
       "id": "WTFM0001",
       "title": "Publish @taprootio/wtfm to the public npm registry",
-      "status": "active",
+      "status": "completed",
       "milestone": "Alpha",
       "priority": "High",
       "effort": 3,
       "depends_on": [],
       "owner": "jereme",
       "collaborators": [],
-      "summary": "Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth; ship 0.13.0 as the first public release."
+      "summary": "Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth; ship 0.13.0 as the first public release.",
+      "completed_on": "2026-07-23"
     }
   ]
 }
