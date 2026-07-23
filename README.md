@@ -13,6 +13,7 @@ npm install --save-dev @taprootio/wtfm
 ## Entry points
 
 - `@taprootio/wtfm` (or `/plugin`) — the Eleventy plugin.
+- `/type-extractor` — TypeScript type extraction for manifest docs.
 - `/renderers` — section renderers for manifest-driven doc pages.
 - `/data/components`, `/data/types`, `/data/manifest` — data helpers.
 - `/bundler/manifest`, `/bundler/copy-assets` — bundler plugins.
