@@ -1,6 +1,6 @@
 {
   "name": "@taprootio/wtfm",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "WTFM — documentation tooling for Custom Elements Manifest-based component libraries",
   "type": "module",
   "exports": {

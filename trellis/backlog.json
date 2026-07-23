@@ -6,10 +6,10 @@
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0002",
+  "nextId": "WTFM0003",
   "counts": {
     "active": 0,
-    "completed": 1,
+    "completed": 2,
     "removed": 0
   },
   "tasks": [
@@ -24,6 +24,21 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth; ship 0.13.0 as the first public release.",
+      "completed_on": "2026-07-23"
+    },
+    {
+      "id": "WTFM0002",
+      "title": "Switch npm publishing to Trusted Publishing (OIDC)",
+      "status": "completed",
+      "milestone": "Alpha",
+      "priority": "High",
+      "effort": 2,
+      "depends_on": [
+        "WTFM0001"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Configure npm Trusted Publishing so the publish workflow authenticates via GitHub Actions OIDC, then retire the short-lived NPM_TOKEN secret entirely.",
       "completed_on": "2026-07-23"
     }
   ]
