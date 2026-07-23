@@ -1,7 +1,7 @@
 import { css, html, nothing, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { EspalierElementBase } from "@taprootio/taproot-controls";
+import { EspalierElementBase } from "@taprootio/espalier";
 import {
   getHighlighter,
   getHighlightTheme,
