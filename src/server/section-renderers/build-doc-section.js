@@ -54,6 +54,7 @@ export async function buildDocSection(
   const {
     level = 3,
     pathPrefix = cemContext?.pathPrefix || "/",
+    semantic = false,
     ...resolvedAnchorOptions
   } = anchorOptions;
   const descriptionParts = [];
@@ -86,6 +87,13 @@ export async function buildDocSection(
   }
 
   const desc = descriptionParts[0].v;
+
+  if (semantic) {
+    return buildSemanticSection(title, descriptionParts, postDescription, {
+      ...resolvedAnchorOptions,
+      level,
+    });
+  }
 
   let result = `
 <div class="doc-section">
@@ -129,4 +137,43 @@ ${part.v}
 
 </div>
 `;
+}
+
+/**
+ * Render a fenced code block whose delimiter is guaranteed not to collide
+ * with backtick runs inside the content.
+ *
+ * @param {string} content
+ * @param {string} language
+ * @returns {string}
+ */
+export function renderSemanticFence(content, language) {
+  const longestRun = content.match(/`+/gu)?.reduce(
+    (max, run) => Math.max(max, run.length),
+    0,
+  ) ?? 0;
+  const fence = "`".repeat(Math.max(3, longestRun + 1));
+  return `${fence}${language}\n${content}\n${fence}`;
+}
+
+/**
+ * The Taproot Docs variant of a documentation section: pure Markdown limited
+ * to the artifact contract's semantic set. No `div` wrapper, no interactive
+ * `<wtfm-code-block>` — demo HTML becomes a plain fenced code block, and the
+ * deployment path prefix is deliberately not applied because fragments must
+ * stay host-independent.
+ */
+function buildSemanticSection(title, descriptionParts, postDescription, anchorOptions) {
+  const { level, ...resolvedAnchorOptions } = anchorOptions;
+  let result = `\n${renderAnchoredHeading(level, title, resolvedAnchorOptions)}\n`;
+  if (postDescription) result += `\n${postDescription}\n`;
+
+  for (const part of descriptionParts) {
+    if (part.t === "text") {
+      if (part.v) result += `\n${part.v}\n`;
+    } else {
+      result += `\n${renderSemanticFence(part.v.trim(), "html")}\n`;
+    }
+  }
+  return `${result}\n`;
 }

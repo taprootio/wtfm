@@ -403,7 +403,11 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
       // demos in their natural document flow.
       const cemContext = buildCemContext(decl, resolvedOptions);
       let cleanDescription = decl.description || "";
-      let codeIdx = cleanDescription.indexOf("```html");
+      // Semantic (Taproot Docs) rendering keeps authored ```html fences as
+      // plain code samples instead of interactive <wtfm-code-block> demos.
+      let codeIdx = renderOverrides.semantic === true
+        ? -1
+        : cleanDescription.indexOf("```html");
       while (codeIdx >= 0) {
         const endIdx = cleanDescription.indexOf("```", codeIdx + 7);
         if (endIdx < 0) break;

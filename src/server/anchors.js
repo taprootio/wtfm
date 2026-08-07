@@ -94,7 +94,7 @@ export function contextualizeAnchorError(error, context) {
  * @returns {string}
  */
 export function resolveAnchorId(title, options = {}) {
-  const { prefix, override, context = `heading "${title}"` } = options;
+  const { prefix, override, context = `heading "${title}"`, join = "--" } = options;
   const explicit = tagValue(override);
   if (explicit) return validateAnchorId(explicit, context);
 
@@ -103,7 +103,7 @@ export function resolveAnchorId(title, options = {}) {
     .filter((part) => part !== undefined && part !== null && `${part}`.trim())
     .map(slugifyAnchor);
   return prefixParts.length > 0
-    ? `${prefixParts.join("--")}--${generated}`
+    ? `${prefixParts.join(join)}${join}${generated}`
     : generated;
 }
 
