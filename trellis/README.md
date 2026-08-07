@@ -13,10 +13,4 @@ generated; do not hand-edit between the markers — edit the per-item files in
 | --- | --- | --- | --- | --- |
 | [WTFM0003](active/WTFM0003.md) | Epic — wtfm support for Taproot's Help & Docs Surfaces initiative | jereme | High | 2 |
 
-### Taproot Docs — GitHub to Production
-
-| ID | Title | Owner | Priority | Effort |
-| --- | --- | --- | --- | --- |
-| [WTFM0010](active/WTFM0010.md) | Emit Taproot Docs artifacts from the Eleventy build | jereme | High | 8 |
-
 <!-- END GENERATED:MILESTONES -->

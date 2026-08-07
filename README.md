@@ -199,3 +199,70 @@ root-absolute URLs inside demo HTML before that source is base64 encoded for
 `<wtfm-code-block>`. Relative and external demo URLs remain unchanged.
 `inlineSvg` reads and returns file content and therefore needs no URL prefix.
 The WTFM client runtime constructs no asset or navigation URLs of its own.
+
+## Taproot Docs artifacts
+
+Opting into the additive Taproot Docs build mode makes the same Eleventy build
+emit the `@taprootio/docs-artifact` payload beside its ordinary portable
+output: `_site/taproot-docs-manifest.json` plus the manifest-listed semantic
+fragments and raster assets under `_site/taproot-docs/`. The ordinary `_site`
+output is byte-for-byte unaffected — Taproot ingests only the manifest and the
+files it lists, never the rendered site HTML.
+
+```js
+eleventyConfig.addPlugin(wtfmPlugin, {
+  cemPath: "custom-elements.json",
+  taprootDocs: {
+    source: {
+      repositoryId: "R_kgDOexample", // GitHub's stable repository id
+      repository: "taprootio/example-docs",
+      revision: "<40-hex commit>",
+      ref: "refs/heads/main",
+    },
+    // Or set ciEnvironment: true to fall back to GITHUB_REPOSITORY_ID,
+    // GITHUB_REPOSITORY, GITHUB_SHA, and GITHUB_REF inside Actions.
+    navigation: [
+      { label: "Guides", children: [{ label: "Getting started", resourceKey: "guide:getting-started" }] },
+      { label: "Widget", resourceKey: "reference:widget" },
+    ],
+  },
+});
+```
+
+Authored Markdown pages opt in per document with explicit identity — keys are
+never derived from routes, titles, or file paths, so pages can move without
+changing what Taproot considers "the same document":
+
+```yaml
+---
+title: Getting started
+description: Install the library and render the widget.
+taprootDocs:
+  key: guide:getting-started
+  kind: guide
+  audiences: [developer]
+  redirectsFrom: [/old-start/]
+  assets:
+    - key: diagram-overview
+      source: assets/overview.png
+---
+```
+
+Every documentation surface additionally becomes a `reference:<slug>` resource
+composed through the same section renderers in their semantic mode.
+
+The fragment boundary is intentional: fragments are rendered by a dedicated
+constrained pipeline (headings start at `h2` with canonical lowercase ids,
+cross-document links become `data-resource-key` markup, images resolve to
+declared assets via `data-asset-key`, demos are plain fenced code), and
+rendered `_site` HTML is never treated as part of the contract. Raw HTML,
+unknown links or images, non-canonical explicit anchors, undeclared assets,
+duplicate identities, unsafe paths, and missing provenance all fail the build.
+Provenance (`source.*`, `configurationSha256`, `sourceDateEpoch`) is explicit
+or CI-provided; the build fails rather than guessing, and falls back to the
+HEAD commit timestamp only for `sourceDateEpoch`. The assembled manifest is
+serialized and asserted through `@taprootio/docs-artifact`, and the written
+artifact is re-validated with `validateArtifactDirectory` before the build is
+allowed to succeed — `npm run test:taproot-docs` runs the fixture-backed
+conformance suite in CI. Authored documents are plain Markdown: template
+syntax inside an opted-in body is outside the artifact contract.
