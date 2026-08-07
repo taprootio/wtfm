@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Eleventy from "@11ty/eleventy";
+import { validateArtifact } from "@taprootio/docs-artifact";
+import { loadConformanceCases } from "@taprootio/docs-artifact/conformance";
 import { validateArtifactDirectory } from "@taprootio/docs-artifact/node";
 import wtfmPlugin from "../src/server/eleventy-plugin.js";
 
@@ -122,6 +124,25 @@ describe("Taproot Docs fixture conformance", () => {
         readFile(path.join(second, relative)),
       ]);
       expect(left.equals(right), `artifact file ${relative} must be deterministic`).toBe(true);
+    }
+  });
+
+  it("agrees with every published conformance case of the pinned contract", async () => {
+    // The producer and consumer pin the same released contract; running the
+    // package's published cases through its own validator in wtfm's runtime
+    // proves the pinned dependency behaves exactly as its release advertises.
+    const cases = await loadConformanceCases();
+    expect(cases.length).toBeGreaterThan(100);
+    for (const fixture of cases) {
+      const result = await validateArtifact(fixture.manifest, fixture.files);
+      const codes = result.ok
+        ? []
+        : [...new Set(result.errors.map((error) => error.code))].sort();
+      expect(
+        { name: fixture.name, ok: result.ok, codes },
+      ).toEqual(
+        { name: fixture.name, ok: fixture.valid, codes: [...fixture.expectedCodes].sort() },
+      );
     }
   });
 

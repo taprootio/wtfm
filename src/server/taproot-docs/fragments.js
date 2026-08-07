@@ -43,8 +43,8 @@ const EMITTED_ATTRIBUTES = new Map([
   ["h4", new Set(["id"])],
   ["h5", new Set(["id"])],
   ["h6", new Set(["id"])],
-  ["a", new Set(["href", "data-resource-key", "data-heading-id"])],
-  ["img", new Set(["alt", "data-asset-key", "width", "height"])],
+  ["a", new Set(["href", "data-resource-key", "data-heading-id", "title"])],
+  ["img", new Set(["alt", "data-asset-key", "width", "height", "title"])],
   ["code", new Set(["data-language"])],
   ["ol", new Set(["start"])],
 ]);
@@ -86,11 +86,13 @@ function transformLink(token, { context, resolveRouteLink }) {
     if (!target) {
       fail(context, `link "${href}" does not resolve to a Taproot Docs resource route.`);
     }
+    const title = token.attrGet("title");
     const attributes = [["data-resource-key", target.resourceKey]];
     if (headingId !== null) {
       if (headingId === "") fail(context, `link "${href}" has an empty heading fragment.`);
       attributes.push(["data-heading-id", headingId]);
     }
+    if (title !== null) attributes.push(["title", title]);
     token.attrs = attributes;
     return;
   }
@@ -154,10 +156,13 @@ export function renderDocsFragment(markdown, options) {
   md.renderer.rules.image = (tokens, index, renderOptions, env, renderer) => {
     const token = tokens[index];
     const asset = token.meta?.taprootDocsAsset;
+    const title = token.meta?.taprootDocsTitle;
     const alt = renderer.renderInlineAsText(token.children ?? [], renderOptions, env);
     return `<img data-asset-key="${md.utils.escapeHtml(asset.key)}"`
       + ` alt="${md.utils.escapeHtml(alt)}"`
-      + ` width="${asset.width}" height="${asset.height}">`;
+      + ` width="${asset.width}" height="${asset.height}"`
+      + (title == null ? "" : ` title="${md.utils.escapeHtml(title)}"`)
+      + ">";
   };
 
   let tokens;
@@ -176,7 +181,11 @@ export function renderDocsFragment(markdown, options) {
       if (child.type === "link_open") transformLink(child, { context, resolveRouteLink });
       if (child.type === "image") {
         const asset = resolveImage(child, { context, assetsBySource });
-        child.meta = { ...child.meta, taprootDocsAsset: asset };
+        child.meta = {
+          ...child.meta,
+          taprootDocsAsset: asset,
+          taprootDocsTitle: child.attrGet("title"),
+        };
         child.attrs = [];
         walkInline(child.children);
         continue;

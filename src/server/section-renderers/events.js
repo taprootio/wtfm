@@ -35,7 +35,9 @@ export const eventsRenderer = {
         {
           prefix: [options.anchorPrefix, this.key],
           override: event.helpAnchor,
-          level: 3 + headingOffset, join: options.anchorJoin, semantic: options.semantic,
+          level: 3 + headingOffset,
+          join: options.anchorJoin,
+          semantic: options.semantic,
           pathPrefix: options.pathPrefix,
         },
       );

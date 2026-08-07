@@ -196,6 +196,13 @@ function buildFunctionSignature(decl) {
  *   replace that built-in. To include custom sections in the output,
  *   add their keys to the `sections` option or use `@docSections` in
  *   the component source.
+ *
+ * @param {object} [options.taprootDocs] - Opt-in Taproot Docs artifact mode
+ *   (WTFM0010). When present, the build additionally emits the
+ *   `@taprootio/docs-artifact` manifest, semantic fragments, and declared
+ *   assets beside the unchanged portable output. See the README's
+ *   "Taproot Docs artifacts" section for the configuration reference and
+ *   per-document front-matter contract.
  */
 export default function wtfmPlugin(eleventyConfig, options = {}) {
   const {

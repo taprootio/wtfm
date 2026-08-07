@@ -77,6 +77,20 @@ describe("renderDocsFragment", () => {
     expect(html).toContain('<a href="https://npmjs.com/">npm</a>');
   });
 
+  it("preserves authored link and image titles on every destination form", () => {
+    const { html } = render(
+      '[internal](/guides/getting-started/ "Guide title") and [external](https://npmjs.com/ "npm title")\n\n'
+      + '![Overview](assets/overview.png "Diagram title")\n',
+    );
+    expect(html).toContain(
+      '<a data-resource-key="guide:getting-started" title="Guide title">internal</a>',
+    );
+    expect(html).toContain('<a href="https://npmjs.com/" title="npm title">external</a>');
+    expect(html).toContain(
+      '<img data-asset-key="diagram-overview" alt="Overview" width="640" height="480" title="Diagram title">',
+    );
+  });
+
   it.each([
     ["[x](/missing/route/)", /does not resolve to a Taproot Docs resource route/u],
     ["[x](../relative.md)", /not a supported fragment destination/u],

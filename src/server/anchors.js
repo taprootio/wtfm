@@ -113,6 +113,10 @@ export function resolveAnchorId(title, options = {}) {
  * @param {number} level
  * @param {string} title
  * @param {object} [options]
+ * @param {string} [options.join="--"] - Separator between prefix parts and
+ *   the generated slug. The Taproot Docs semantic mode passes "-" because
+ *   the artifact contract's heading ids allow only single-hyphen runs;
+ *   explicit overrides bypass joining entirely.
  * @returns {string}
  */
 export function renderAnchoredHeading(level, title, options = {}) {

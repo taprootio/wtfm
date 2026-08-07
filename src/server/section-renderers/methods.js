@@ -24,7 +24,9 @@ export const methodsRenderer = {
       result += await buildDocSection(method.name, method.description, "", cemContext, {
         prefix: [options.anchorPrefix, this.key],
         override: method.helpAnchor,
-        level: 3 + headingOffset, join: options.anchorJoin, semantic: options.semantic,
+        level: 3 + headingOffset,
+        join: options.anchorJoin,
+        semantic: options.semantic,
         pathPrefix: options.pathPrefix,
       });
     }

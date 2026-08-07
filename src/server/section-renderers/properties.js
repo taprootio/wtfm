@@ -42,7 +42,9 @@ export const propertiesRenderer = {
         {
           prefix: [options.anchorPrefix, this.key],
           override: member.helpAnchor,
-          level: 3 + headingOffset, join: options.anchorJoin, semantic: options.semantic,
+          level: 3 + headingOffset,
+          join: options.anchorJoin,
+          semantic: options.semantic,
           pathPrefix: options.pathPrefix,
         },
       );

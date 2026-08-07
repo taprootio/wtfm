@@ -12,7 +12,7 @@ const explicitSource = {
   ref: "refs/heads/main",
 };
 
-const baseOptions = { source: explicitSource, navigation: [] };
+const baseOptions = { source: explicitSource, navigation: [{ label: "Docs" }] };
 
 /** Environment double: no CI variables, no SOURCE_DATE_EPOCH. */
 const emptyEnv = {};
@@ -41,7 +41,7 @@ describe("resolveTaprootDocsOptions", () => {
       ciEnvironment: false,
       defaultLocale: "en-US",
       localeLabel: "English",
-      navigation: [],
+      navigation: [{ label: "Docs" }],
       assets: [],
       sourceDateEpoch: null,
     });
@@ -55,7 +55,7 @@ describe("resolveTaprootDocsOptions", () => {
       GITHUB_REF: "refs/tags/docs-v1",
     };
     const resolved = resolveTaprootDocsOptions(
-      { source: {}, ciEnvironment: true, navigation: [] },
+      { source: {}, ciEnvironment: true, navigation: [{ label: "Docs" }] },
       { env },
     );
     expect(resolved.source.repositoryId).toBe("123456789");
@@ -65,14 +65,14 @@ describe("resolveTaprootDocsOptions", () => {
     expect(resolved.source.ref).toBe("refs/tags/docs-v1");
 
     expect(() =>
-      resolveTaprootDocsOptions({ source: {}, navigation: [] }, { env }),
+      resolveTaprootDocsOptions({ source: {}, navigation: [{ label: "Docs" }] }, { env }),
     ).toThrow(/source\.repositoryId is required/u);
   });
 
   it("prefers explicit source values over CI environment fallbacks", () => {
     const env = { GITHUB_REPOSITORY_ID: "environment-id" };
     const resolved = resolveTaprootDocsOptions(
-      { source: explicitSource, ciEnvironment: true, navigation: [] },
+      { source: explicitSource, ciEnvironment: true, navigation: [{ label: "Docs" }] },
       { env },
     );
     expect(resolved.source.repositoryId).toBe("R_kgDOexample");
@@ -87,7 +87,7 @@ describe("resolveTaprootDocsOptions", () => {
     const source = { ...explicitSource };
     delete source[field];
     expect(() =>
-      resolveTaprootDocsOptions({ source, navigation: [] }, { env: emptyEnv }),
+      resolveTaprootDocsOptions({ source, navigation: [{ label: "Docs" }] }, { env: emptyEnv }),
     ).toThrow(new RegExp(`source\\.${field} is required`, "u"));
   });
 
@@ -106,6 +106,8 @@ describe("resolveTaprootDocsOptions", () => {
     expect(() =>
       resolveTaprootDocsOptions({ source: explicitSource }, { env: emptyEnv }),
     ).toThrow(/navigation is required/u);
+    expect(() => resolve({ navigation: [] }))
+      .toThrow(/navigation may not be empty/u);
     expect(() => resolve({ navigation: [{ resourceKey: "guide:a" }] }))
       .toThrow(/navigation\[0\]\.label/u);
     expect(() =>

@@ -43,7 +43,9 @@ export const parametersRenderer = {
         {
           prefix: [options.anchorPrefix, this.key],
           override: param.helpAnchor,
-          level: 3 + headingOffset, join: options.anchorJoin, semantic: options.semantic,
+          level: 3 + headingOffset,
+          join: options.anchorJoin,
+          semantic: options.semantic,
           pathPrefix: options.pathPrefix,
         },
       );

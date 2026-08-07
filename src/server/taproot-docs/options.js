@@ -213,9 +213,12 @@ export function resolveTaprootDocsOptions(raw, { env = process.env } = {}) {
     : requireNonEmptyString(raw.localeLabel, "localeLabel");
 
   if (!("navigation" in raw)) {
-    fail("navigation is required — provide an ordered tree of { label, resourceKey?, children? } nodes (use [] for none).");
+    fail("navigation is required — provide an ordered, non-empty tree of { label, resourceKey?, children? } nodes.");
   }
   const navigation = validateNavigationNodes(raw.navigation, "navigation");
+  if (navigation.length === 0) {
+    fail("navigation may not be empty — the artifact contract requires at least one navigation node.");
+  }
   const assets = validateAssetDeclarations(raw.assets ?? [], "assets");
   const sourceDateEpoch = resolveSourceDateEpoch(raw.sourceDateEpoch, env);
 

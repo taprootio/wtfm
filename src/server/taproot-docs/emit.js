@@ -20,7 +20,7 @@
 
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, rmSync } from "node:fs";
+import { readdirSync, readFileSync, rmSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import {
@@ -96,6 +96,23 @@ function canonicalRouteFor(route, context) {
 
 function fragmentPathFor(key, locale) {
   return `taproot-docs/fragments/${key.replace(/[:/]/gu, "-")}.${locale.toLowerCase()}.html`;
+}
+
+function assertArtifactSubtreeIsEmitterOwned(outputDirectory) {
+  let entries;
+  try {
+    entries = readdirSync(join(outputDirectory, "taproot-docs"), { withFileTypes: true });
+  } catch {
+    return; // No subtree yet — nothing to protect.
+  }
+  const foreign = entries
+    .filter((entry) => !(entry.isDirectory() && ["assets", "fragments"].includes(entry.name)))
+    .map((entry) => entry.name);
+  if (foreign.length > 0) {
+    fail(
+      `the output "taproot-docs" directory contains entries the emitter does not own (${foreign.join(", ")}) — that subtree and ${MANIFEST_FILE_NAME} are reserved for the Docs artifact and are reset on every build; move site content elsewhere.`,
+    );
+  }
 }
 
 function blobUrlBase(source) {
@@ -318,7 +335,10 @@ export async function emitTaprootDocsArtifact(input, io = {}) {
   // ── Write the artifact payload ────────────────────────────────
   // The artifact subtree is exclusively emitter-owned: reset it so stale
   // fragments or assets from a previous build cannot linger (the directory
-  // validator would reject them as undeclared files).
+  // validator would reject them as undeclared files). Anything in that
+  // subtree the emitter would not have written itself is site content that
+  // a reset would silently destroy — fail closed instead of deleting it.
+  assertArtifactSubtreeIsEmitterOwned(outputDirectory);
   rmSync(join(outputDirectory, "taproot-docs"), { recursive: true, force: true });
   rmSync(join(outputDirectory, MANIFEST_FILE_NAME), { force: true });
   for (const file of [...fragmentFiles, ...assetFiles]) {
@@ -326,7 +346,9 @@ export async function emitTaprootDocsArtifact(input, io = {}) {
     await mkdir(dirname(absolute), { recursive: true });
     await writeFile(absolute, file.contents);
   }
-  await writeFile(join(outputDirectory, MANIFEST_FILE_NAME), `${serialized}\n`, "utf-8");
+  // serializeManifest already terminates with the canonical single newline;
+  // the file must stay the package's exact canonical byte stream.
+  await writeFile(join(outputDirectory, MANIFEST_FILE_NAME), serialized, "utf-8");
 
   // ── Self-validate the written artifact ────────────────────────
   const result = await validateArtifactDirectory(outputDirectory);

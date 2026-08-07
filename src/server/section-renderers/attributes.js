@@ -33,7 +33,9 @@ export const attributesRenderer = {
         {
           prefix: [options.anchorPrefix, this.key],
           override: attr.helpAnchor,
-          level: 3 + headingOffset, join: options.anchorJoin, semantic: options.semantic,
+          level: 3 + headingOffset,
+          join: options.anchorJoin,
+          semantic: options.semantic,
           pathPrefix: options.pathPrefix,
         },
       );

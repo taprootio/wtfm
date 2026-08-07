@@ -266,3 +266,8 @@ artifact is re-validated with `validateArtifactDirectory` before the build is
 allowed to succeed — `npm run test:taproot-docs` runs the fixture-backed
 conformance suite in CI. Authored documents are plain Markdown: template
 syntax inside an opted-in body is outside the artifact contract.
+
+`_site/taproot-docs/` and `_site/taproot-docs-manifest.json` are emitter-owned
+and reset on every build; the build fails closed if that subtree contains
+anything the emitter did not write, so site content can never be silently
+deleted from the deployed output.

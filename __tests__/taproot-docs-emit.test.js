@@ -197,6 +197,24 @@ describe("emitTaprootDocsArtifact", () => {
     expect(existsSync(join(directory, "taproot-docs", "fragments", "stale.html"))).toBe(false);
   });
 
+  it("fails closed instead of deleting foreign content in the artifact subtree", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
+    mkdirSync(join(directory, "taproot-docs", "user-page"), { recursive: true });
+    writeFileSync(join(directory, "taproot-docs", "user-page", "index.html"), "<p>mine</p>");
+
+    await expect(emit({ outputDirectory: directory }))
+      .rejects.toThrow(/entries the emitter does not own \(user-page\)/u);
+    expect(existsSync(join(directory, "taproot-docs", "user-page", "index.html"))).toBe(true);
+  });
+
+  it("wraps contract validation failures for schema-incompatible configuration", async () => {
+    await expect(emit({
+      documents: makeDocuments({ kind: "tutorial" }),
+    })).rejects.toThrow(
+      /assembled manifest failed contract validation:[\s\S]*semantic\.kind/u,
+    );
+  });
+
   it("fails closed when no deterministic timestamp source exists", async () => {
     await expect(emit({
       options: makeOptions({ sourceDateEpoch: null }),

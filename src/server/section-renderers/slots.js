@@ -27,7 +27,9 @@ export const slotsRenderer = {
         {
           prefix: [options.anchorPrefix, this.key],
           override: slot.helpAnchor,
-          level: 3 + headingOffset, join: options.anchorJoin, semantic: options.semantic,
+          level: 3 + headingOffset,
+          join: options.anchorJoin,
+          semantic: options.semantic,
           pathPrefix: options.pathPrefix,
         },
       );
