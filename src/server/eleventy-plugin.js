@@ -18,6 +18,7 @@ import {
 import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
 import { buildHelpManifest } from "./help-manifest.js";
+import { resolveTaprootDocsOptions } from "./taproot-docs/options.js";
 import { applyPathPrefixToHtml } from "./urls.js";
 
 /**
@@ -206,7 +207,14 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     customRenderers,
     referenceUrlBuilder,
     helpUrlBuilder,
+    taprootDocs,
   } = options;
+
+  // ── Taproot Docs artifact mode (opt-in, WTFM0010) ─────────────
+  // Resolved eagerly so a misconfigured docs build fails at plugin setup,
+  // not partway through an emit. `null` means the mode is off and the
+  // plugin behaves exactly as before.
+  const taprootDocsOptions = resolveTaprootDocsOptions(taprootDocs);
 
   // ── Resolved options (passed to every renderer) ───────────────
   const resolvedOptions = {

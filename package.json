@@ -115,6 +115,7 @@
   "license": "ISC",
   "dependencies": {
     "@11ty/posthtml-urls": "^1.0.3",
+    "@taprootio/docs-artifact": "1.0.1",
     "markdown-it": "^14.1.0",
     "markdown-it-anchor": "^9.2.1",
     "markdown-it-attrs": "^5.0.0",
