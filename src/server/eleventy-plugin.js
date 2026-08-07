@@ -18,6 +18,7 @@ import {
 import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
 import { buildHelpManifest } from "./help-manifest.js";
+import { collectTaprootDocsDocuments } from "./taproot-docs/documents.js";
 import { resolveTaprootDocsOptions } from "./taproot-docs/options.js";
 import { applyPathPrefixToHtml } from "./urls.js";
 
@@ -215,6 +216,13 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
   // not partway through an emit. `null` means the mode is off and the
   // plugin behaves exactly as before.
   const taprootDocsOptions = resolveTaprootDocsOptions(taprootDocs);
+  let taprootDocsDocuments = null;
+  if (taprootDocsOptions) {
+    eleventyConfig.addCollection("taprootDocsDocuments", (collectionApi) => {
+      taprootDocsDocuments = collectTaprootDocsDocuments(collectionApi);
+      return taprootDocsDocuments;
+    });
+  }
 
   // ── Resolved options (passed to every renderer) ───────────────
   const resolvedOptions = {
