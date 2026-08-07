@@ -43,8 +43,15 @@ describe("resolveTaprootDocsOptions", () => {
       localeLabel: "English",
       navigation: [{ label: "Docs" }],
       assets: [],
+      assetsRoot: null,
       sourceDateEpoch: null,
     });
+  });
+
+  it("accepts an assetsRoot override and rejects empty values", () => {
+    expect(resolve({ assetsRoot: ".." }).assetsRoot).toBe("..");
+    expect(resolve({ assetsRoot: "/absolute/media" }).assetsRoot).toBe("/absolute/media");
+    expect(() => resolve({ assetsRoot: "" })).toThrow(/assetsRoot must be a non-empty string/u);
   });
 
   it("fills provenance from GITHUB_* variables only when ciEnvironment is enabled", () => {
@@ -143,9 +150,9 @@ describe("validateAssetDeclarations", () => {
   });
 
   it.each([
-    [{ key: "a", source: "/etc/passwd" }, /project-relative/u],
-    [{ key: "a", source: "C:/windows/img.png" }, /project-relative/u],
-    [{ key: "a", source: "~/img.png" }, /project-relative/u],
+    [{ key: "a", source: "/etc/passwd" }, /must be a relative path/u],
+    [{ key: "a", source: "C:/windows/img.png" }, /must be a relative path/u],
+    [{ key: "a", source: "~/img.png" }, /must be a relative path/u],
     [{ key: "a", source: "../outside.png" }, /'\.\.' segments/u],
     [{ key: "a", source: "assets/../../outside.png" }, /'\.\.' segments/u],
     [{ key: "a", source: "assets\\img.png" }, /forward slashes/u],

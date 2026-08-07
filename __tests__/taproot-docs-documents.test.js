@@ -57,13 +57,26 @@ describe("validateTaprootDocsFrontMatter", () => {
   it.each([
     [{ kind: "guide", audiences: ["user"] }, /taprootDocs\.key/u],
     [{ key: "a", audiences: ["user"] }, /taprootDocs\.kind/u],
-    [{ key: "a", kind: "guide" }, /taprootDocs\.audiences is required/u],
     [{ key: "a", kind: "guide", audiences: [] }, /audiences may not be empty/u],
+    [{ ...validBlock, audiences: ["user", "user"] }, /audiences contains duplicate "user"/u],
+    [{ ...validBlock, tags: ["a", "a"] }, /tags contains duplicate "a"/u],
     [{ ...validBlock, redirectsFrom: [{ from: "/x/", status: 302 }] }, /status must be 301 or 308/u],
     [{ ...validBlock, redirectsFrom: [{ from: "/x/", to: "/y/" }] }, /unknown key 'to'/u],
     [{ ...validBlock, surprise: true }, /unknown key 'surprise'/u],
   ])("fails closed on malformed front matter %j", (block, message) => {
     expect(() => validateTaprootDocsFrontMatter(block, "doc")).toThrow(message);
+  });
+
+  it("defaults audiences to developer and canonicalizes set-like arrays", () => {
+    const defaulted = validateTaprootDocsFrontMatter({ key: "a", kind: "guide" }, "doc");
+    expect(defaulted.audiences).toEqual(["developer"]);
+
+    const sorted = validateTaprootDocsFrontMatter(
+      { key: "a", kind: "guide", audiences: ["user", "developer"], tags: ["zeta", "alpha"] },
+      "doc",
+    );
+    expect(sorted.audiences).toEqual(["developer", "user"]);
+    expect(sorted.tags).toEqual(["alpha", "zeta"]);
   });
 });
 

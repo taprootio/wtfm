@@ -39,6 +39,21 @@ function validateStringArray(value, name) {
   return value.map((entry, index) => requireNonEmptyString(entry, `${name}[${index}]`));
 }
 
+/**
+ * Set-like front-matter arrays (audiences, tags): duplicates are authoring
+ * errors, and the returned copy is sorted in code-unit order because the
+ * artifact contract requires sorted unique values.
+ */
+function validateStringSet(value, name) {
+  const entries = validateStringArray(value, name);
+  const seen = new Set();
+  for (const entry of entries) {
+    if (seen.has(entry)) fail(`${name} contains duplicate "${entry}".`);
+    seen.add(entry);
+  }
+  return [...entries].sort();
+}
+
 function normalizeRedirect(entry, context) {
   if (typeof entry === "string") {
     return { from: requireNonEmptyString(entry, context), status: 301 };
@@ -72,14 +87,13 @@ export function validateTaprootDocsFrontMatter(raw, context) {
   }
   const key = requireNonEmptyString(raw.key, `${context}: taprootDocs.key`);
   const kind = requireNonEmptyString(raw.kind, `${context}: taprootDocs.kind`);
-  if (!("audiences" in raw)) {
-    fail(`${context}: taprootDocs.audiences is required — declare who the document is for (see the @taprootio/docs-artifact contract for the audience list).`);
-  }
-  const audiences = validateStringArray(raw.audiences, `${context}: taprootDocs.audiences`);
+  const audiences = raw.audiences === undefined
+    ? ["developer"]
+    : validateStringSet(raw.audiences, `${context}: taprootDocs.audiences`);
   if (audiences.length === 0) {
-    fail(`${context}: taprootDocs.audiences may not be empty.`);
+    fail(`${context}: taprootDocs.audiences may not be empty — omit it for the "developer" default.`);
   }
-  const tags = raw.tags === undefined ? [] : validateStringArray(raw.tags, `${context}: taprootDocs.tags`);
+  const tags = raw.tags === undefined ? [] : validateStringSet(raw.tags, `${context}: taprootDocs.tags`);
   const description = raw.description === undefined
     ? undefined
     : requireNonEmptyString(raw.description, `${context}: taprootDocs.description`);

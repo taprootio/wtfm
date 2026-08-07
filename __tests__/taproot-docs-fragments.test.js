@@ -123,14 +123,19 @@ describe("renderDocsFragment", () => {
     expect(() => render("```c++\nint x;\n```\n")).toThrow(/code fence language "c\+\+"/u);
   });
 
-  it("drops authored classes (wtfm-wide attrs policy) and never emits them", () => {
-    const { html } = render("A paragraph. {.fancy}\n");
-    expect(html).not.toContain("class=");
-    expect(html).not.toContain("{.fancy}");
+  it("rejects authored classes instead of silently dropping them", () => {
+    expect(() => render("A paragraph. {.fancy}\n")).toThrow(/<p> may not carry the "class" attribute/u);
   });
 
   it("rejects explicit ids on non-heading elements", () => {
     expect(() => render("A paragraph. {#para-id}\n")).toThrow(/<p> may not carry the "id" attribute/u);
+  });
+
+  it("rejects unsupported authored attributes on links and images", () => {
+    expect(() => render("[x](/guides/getting-started/){target=_blank}\n"))
+      .toThrow(/<a> may not carry the "target" attribute/u);
+    expect(() => render("![Overview](assets/overview.png){.wide}\n"))
+      .toThrow(/image attribute "class" is not supported/u);
   });
 
   it("strips presentational table alignment styles", () => {

@@ -20,9 +20,9 @@
 
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import {
   FRAGMENT_MEDIA_TYPE,
   HTML_FRAGMENT_CAPABILITY,
@@ -98,36 +98,34 @@ function fragmentPathFor(key, locale) {
   return `taproot-docs/fragments/${key.replace(/[:/]/gu, "-")}.${locale.toLowerCase()}.html`;
 }
 
-function assertArtifactSubtreeIsEmitterOwned(outputDirectory) {
-  const root = join(outputDirectory, "taproot-docs");
-  let entries;
+/**
+ * Removes the previous build's artifact output. The plugin runs this on
+ * `eleventy.before`, so by the time the emitter inspects the output tree,
+ * anything inside the artifact namespace was written by *this* build's site
+ * templates — and the emitter can fail closed instead of deleting it.
+ *
+ * @param {string} outputDirectory
+ */
+export function cleanTaprootDocsArtifact(outputDirectory) {
+  rmSync(join(outputDirectory, "taproot-docs"), { recursive: true, force: true });
+  rmSync(join(outputDirectory, MANIFEST_FILE_NAME), { force: true });
+}
+
+function assertArtifactNamespaceIsFree(outputDirectory) {
+  const conflicts = [];
+  if (existsSync(join(outputDirectory, MANIFEST_FILE_NAME))) {
+    conflicts.push(MANIFEST_FILE_NAME);
+  }
+  let entries = [];
   try {
-    entries = readdirSync(root, { withFileTypes: true });
+    entries = readdirSync(join(outputDirectory, "taproot-docs"), { withFileTypes: true });
   } catch {
-    return; // No subtree yet — nothing to protect.
+    // No subtree — the namespace is free.
   }
-  // Emitter output is exactly two directories of flat regular files, so any
-  // other top-level entry — and any nested directory or non-regular entry
-  // inside the owned directories — is site content a reset would destroy.
-  const foreign = entries
-    .filter((entry) => !(entry.isDirectory() && ["assets", "fragments"].includes(entry.name)))
-    .map((entry) => entry.name);
-  for (const owned of ["assets", "fragments"]) {
-    let ownedEntries;
-    try {
-      ownedEntries = readdirSync(join(root, owned), { withFileTypes: true });
-    } catch {
-      continue;
-    }
-    foreign.push(
-      ...ownedEntries
-        .filter((entry) => !entry.isFile())
-        .map((entry) => `${owned}/${entry.name}`),
-    );
-  }
-  if (foreign.length > 0) {
+  conflicts.push(...entries.map((entry) => `taproot-docs/${entry.name}`));
+  if (conflicts.length > 0) {
     fail(
-      `the output "taproot-docs" directory contains entries the emitter does not own (${foreign.join(", ")}) — that subtree and ${MANIFEST_FILE_NAME} are reserved for the Docs artifact and are reset on every build; move site content elsewhere.`,
+      `this build's site output wrote into the reserved Docs artifact namespace (${conflicts.join(", ")}) — ${MANIFEST_FILE_NAME} and the "taproot-docs" directory belong to the artifact emitter; move that content elsewhere.`,
     );
   }
 }
@@ -193,8 +191,17 @@ export async function emitTaprootDocsArtifact(input, io = {}) {
   if (documents === null) {
     fail("the authored-document collection never ran — Taproot Docs mode requires a full filesystem build.");
   }
+  // Asset sources resolve against the Eleventy input directory by default —
+  // declarations live beside the content that uses them. `assetsRoot` points
+  // elsewhere (e.g. a project root above `dir.input`), absolute or
+  // input-relative.
+  const assetBase = options.assetsRoot === null
+    ? projectRoot
+    : isAbsolute(options.assetsRoot)
+      ? options.assetsRoot
+      : resolve(projectRoot, options.assetsRoot);
   const readAssetFile = io.readAssetFile
-    ?? ((source) => readFileSync(resolve(projectRoot, source)));
+    ?? ((source) => readFileSync(resolve(assetBase, source)));
   const resolveFallbackTimestamp = io.resolveFallbackTimestamp ?? headCommitTimestamp;
 
   // ── Provenance ────────────────────────────────────────────────
@@ -350,14 +357,10 @@ export async function emitTaprootDocsArtifact(input, io = {}) {
   }
 
   // ── Write the artifact payload ────────────────────────────────
-  // The artifact subtree is exclusively emitter-owned: reset it so stale
-  // fragments or assets from a previous build cannot linger (the directory
-  // validator would reject them as undeclared files). Anything in that
-  // subtree the emitter would not have written itself is site content that
-  // a reset would silently destroy — fail closed instead of deleting it.
-  assertArtifactSubtreeIsEmitterOwned(outputDirectory);
-  rmSync(join(outputDirectory, "taproot-docs"), { recursive: true, force: true });
-  rmSync(join(outputDirectory, MANIFEST_FILE_NAME), { force: true });
+  // The previous build's artifact was removed before this build rendered
+  // (cleanTaprootDocsArtifact on `eleventy.before`), so any occupant of the
+  // namespace now is freshly rendered site content — never delete it.
+  assertArtifactNamespaceIsFree(outputDirectory);
   for (const file of [...fragmentFiles, ...assetFiles]) {
     const absolute = join(outputDirectory, file.path);
     await mkdir(dirname(absolute), { recursive: true });

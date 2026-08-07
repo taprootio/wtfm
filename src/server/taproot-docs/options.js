@@ -16,6 +16,7 @@ const TOP_LEVEL_KEYS = new Set([
   "localeLabel",
   "navigation",
   "assets",
+  "assetsRoot",
   "sourceDateEpoch",
 ]);
 
@@ -49,7 +50,8 @@ function optionalNonEmptyString(value, name) {
 
 /**
  * Validates one declared-asset entry: `{ key, source }`, where `source` is a
- * project-relative file path. Path *safety* is structural and enforced here;
+ * relative file path resolved against the Eleventy input directory (or the
+ * configured `assetsRoot`). Path *safety* is structural and enforced here;
  * the artifact-side key and path formats are enforced by the contract package
  * when the manifest is asserted.
  *
@@ -71,7 +73,7 @@ export function validateAssetDeclaration(declaration, context) {
     fail(`${context}.source must use forward slashes.`);
   }
   if (source.startsWith("/") || /^[A-Za-z]:/u.test(source) || source.startsWith("~")) {
-    fail(`${context}.source must be a project-relative path.`);
+    fail(`${context}.source must be a relative path — sources resolve against the Eleventy input directory (or taprootDocs.assetsRoot).`);
   }
   const segments = source.split("/");
   if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
@@ -220,6 +222,12 @@ export function resolveTaprootDocsOptions(raw, { env = process.env } = {}) {
     fail("navigation may not be empty — the artifact contract requires at least one navigation node.");
   }
   const assets = validateAssetDeclarations(raw.assets ?? [], "assets");
+  // Asset sources resolve against the Eleventy input directory by default;
+  // assetsRoot (absolute, or relative to the input directory) points at a
+  // different base — e.g. a project root above `dir.input`.
+  const assetsRoot = raw.assetsRoot === undefined
+    ? null
+    : requireNonEmptyString(raw.assetsRoot, "assetsRoot");
   const sourceDateEpoch = resolveSourceDateEpoch(raw.sourceDateEpoch, env);
 
   return {
@@ -229,6 +237,7 @@ export function resolveTaprootDocsOptions(raw, { env = process.env } = {}) {
     localeLabel,
     navigation,
     assets,
+    assetsRoot,
     sourceDateEpoch,
   };
 }

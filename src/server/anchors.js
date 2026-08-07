@@ -136,8 +136,12 @@ export function renderAnchoredHeading(level, title, options = {}) {
  * @param {import("markdown-it")} markdownLib
  * @returns {import("markdown-it")}
  */
-export function configureMarkdownAnchors(markdownLib) {
-  markdownLib.use(markdownItAttrs, { allowedAttributes: ["id"] });
+export function configureMarkdownAnchors(markdownLib, { allowedAttributes = ["id"] } = {}) {
+  // Site rendering keeps the historical id-only filter. The Taproot Docs
+  // fragment pipeline passes `allowedAttributes: null` so authored curly
+  // attributes are *retained* for its own fail-closed validation instead of
+  // being silently discarded here.
+  markdownLib.use(markdownItAttrs, allowedAttributes ? { allowedAttributes } : {});
   markdownLib.use(markdownItAnchor, {
     slugify: slugifyAnchor,
     tabIndex: false,

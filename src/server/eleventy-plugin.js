@@ -19,7 +19,7 @@ import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
 import { buildHelpManifest } from "./help-manifest.js";
 import { collectTaprootDocsDocuments } from "./taproot-docs/documents.js";
-import { emitTaprootDocsArtifact } from "./taproot-docs/emit.js";
+import { cleanTaprootDocsArtifact, emitTaprootDocsArtifact } from "./taproot-docs/emit.js";
 import { resolveTaprootDocsOptions } from "./taproot-docs/options.js";
 import { applyPathPrefixToHtml } from "./urls.js";
 
@@ -229,6 +229,13 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     eleventyConfig.addCollection("taprootDocsDocuments", (collectionApi) => {
       taprootDocsDocuments = collectTaprootDocsDocuments(collectionApi);
       return taprootDocsDocuments;
+    });
+    // Remove the previous build's artifact before this build renders, so the
+    // emitter can treat any occupant of the artifact namespace as freshly
+    // rendered site content and fail closed instead of deleting it.
+    eleventyConfig.on("eleventy.before", ({ directories, outputMode }) => {
+      if (outputMode !== undefined && outputMode !== "fs") return;
+      cleanTaprootDocsArtifact(resolve(directories.output));
     });
   }
 

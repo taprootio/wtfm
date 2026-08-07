@@ -86,13 +86,17 @@ function transformLink(token, { context, resolveRouteLink }) {
     if (!target) {
       fail(context, `link "${href}" does not resolve to a Taproot Docs resource route.`);
     }
-    const title = token.attrGet("title");
     const attributes = [["data-resource-key", target.resourceKey]];
     if (headingId !== null) {
       if (headingId === "") fail(context, `link "${href}" has an empty heading fragment.`);
       attributes.push(["data-heading-id", headingId]);
     }
-    if (title !== null) attributes.push(["title", title]);
+    // Carry every non-href authored attribute through the rebuild so the
+    // emitted-attribute check can pass supported ones (title) and reject the
+    // rest instead of silently dropping them.
+    for (const [name, value] of token.attrs ?? []) {
+      if (name !== "href") attributes.push([name, value]);
+    }
     token.attrs = attributes;
     return;
   }
@@ -140,11 +144,17 @@ function enforceEmittedAttributes(token, context) {
  */
 export function renderDocsFragment(markdown, options) {
   const { context, resolveRouteLink, assetsBySource } = options;
-  const md = configureMarkdownAnchors(markdownIt({
-    html: true,
-    breaks: false,
-    linkify: false,
-  }));
+  // Retain every authored attribute (allowedAttributes: null) so the
+  // fail-closed checks below see exactly what the author wrote; the site
+  // pipeline's silent id-only filtering would hide contract violations.
+  const md = configureMarkdownAnchors(
+    markdownIt({
+      html: true,
+      breaks: false,
+      linkify: false,
+    }),
+    { allowedAttributes: null },
+  );
 
   md.renderer.rules.fence = (tokens, index) => {
     const token = tokens[index];
@@ -186,6 +196,19 @@ export function renderDocsFragment(markdown, options) {
           taprootDocsAsset: asset,
           taprootDocsTitle: child.attrGet("title"),
         };
+        for (const [name, value] of child.attrs ?? []) {
+          // src and title are consumed above; the parser always stamps an
+          // empty alt placeholder (real alt text comes from the children).
+          if (name === "src" || name === "title") continue;
+          if (name === "alt" && value === "") continue;
+          if (name === "alt") {
+            fail(context, `image alt must be written in Markdown form (![alt text](…)), not as an {alt=…} attribute.`);
+          }
+          fail(
+            context,
+            `image attribute "${name}" is not supported — image identity and dimensions come from the declared asset.`,
+          );
+        }
         child.attrs = [];
         walkInline(child.children);
         continue;

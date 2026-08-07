@@ -240,7 +240,7 @@ description: Install the library and render the widget.
 taprootDocs:
   key: guide:getting-started
   kind: guide
-  audiences: [developer]
+  audiences: [developer] # optional; defaults to [developer]
   redirectsFrom: [/old-start/]
   assets:
     - key: diagram-overview
@@ -256,8 +256,15 @@ constrained pipeline (headings start at `h2` with canonical lowercase ids,
 cross-document links become `data-resource-key` markup, images resolve to
 declared assets via `data-asset-key`, demos are plain fenced code), and
 rendered `_site` HTML is never treated as part of the contract. Raw HTML,
-unknown links or images, non-canonical explicit anchors, undeclared assets,
-duplicate identities, unsafe paths, and missing provenance all fail the build.
+unsupported authored attributes (`{.class}` and friends), unknown links or
+images, non-canonical explicit anchors, undeclared assets, duplicate
+identities, unsafe paths, and missing provenance all fail the build.
+Asset sources resolve against the Eleventy input directory; set
+`taprootDocs.assetsRoot` (absolute, or input-relative such as `".."`) when
+assets live elsewhere, e.g. above a `dir.input: "src"` content directory.
+`taprootDocs.audiences` is optional and defaults to `["developer"]`;
+audiences and tags are canonicalized to the contract's sorted unique form,
+and duplicates fail the build.
 Provenance (`source.*`, `configurationSha256`, `sourceDateEpoch`) is explicit
 or CI-provided; the build fails rather than guessing, and falls back to the
 HEAD commit timestamp only for `sourceDateEpoch`. The assembled manifest is
@@ -267,10 +274,10 @@ allowed to succeed — `npm run test:taproot-docs` runs the fixture-backed
 conformance suite in CI. Authored documents are plain Markdown: template
 syntax inside an opted-in body is outside the artifact contract.
 
-`_site/taproot-docs/` and `_site/taproot-docs-manifest.json` are emitter-owned
-and reset on every build. The build fails closed if that subtree contains
-anything shaped unlike emitter output — foreign top-level entries, nested
-directories, or non-regular files — so page output routed there is caught
-rather than silently deleted. Flat files inside `taproot-docs/fragments/` and
-`taproot-docs/assets/` are treated as artifact output from earlier builds and
-reset.
+`_site/taproot-docs/` and `_site/taproot-docs-manifest.json` are a reserved,
+emitter-owned namespace. The previous build's artifact is removed before each
+build renders, so anything occupying that namespace afterward was written by
+the current build's own templates — and the build then fails closed instead
+of overwriting or deleting it. Site content is never silently destroyed;
+route pages or passthrough copies targeting the reserved namespace are
+build errors.

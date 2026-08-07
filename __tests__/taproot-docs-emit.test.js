@@ -92,6 +92,7 @@ function makeOptions(overrides = {}) {
       { label: "Widget", resourceKey: "reference:widget" },
     ],
     assets: [],
+    assetsRoot: null,
     sourceDateEpoch: 1767225600,
     ...overrides,
   };
@@ -187,39 +188,46 @@ describe("emitTaprootDocsArtifact", () => {
     }
   });
 
-  it("resets a stale artifact subtree before writing", async () => {
+  it.each([
+    ["a flat page file", ["taproot-docs", "fragments"], "user-page.html", /taproot-docs\/fragments/u],
+    ["a nested page directory", ["taproot-docs", "user-page"], "index.html", /taproot-docs\/user-page/u],
+  ])("fails closed on %s in the artifact namespace without deleting it", async (_label, directorySegments, fileName, message) => {
     const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
-    mkdirSync(join(directory, "taproot-docs", "fragments"), { recursive: true });
-    writeFileSync(join(directory, "taproot-docs", "fragments", "stale.html"), "<p>old</p>");
-
-    await emit({ outputDirectory: directory });
-
-    expect(existsSync(join(directory, "taproot-docs", "fragments", "stale.html"))).toBe(false);
-  });
-
-  it("fails closed instead of deleting foreign content in the artifact subtree", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
-    mkdirSync(join(directory, "taproot-docs", "user-page"), { recursive: true });
-    writeFileSync(join(directory, "taproot-docs", "user-page", "index.html"), "<p>mine</p>");
+    mkdirSync(join(directory, ...directorySegments), { recursive: true });
+    const planted = join(directory, ...directorySegments, fileName);
+    writeFileSync(planted, "<p>mine</p>");
 
     await expect(emit({ outputDirectory: directory }))
-      .rejects.toThrow(/entries the emitter does not own \(user-page\)/u);
-    expect(existsSync(join(directory, "taproot-docs", "user-page", "index.html"))).toBe(true);
+      .rejects.toThrow(/reserved Docs artifact namespace/u);
+    await expect(emit({ outputDirectory: directory })).rejects.toThrow(message);
+    expect(existsSync(planted)).toBe(true);
+    expect(readFileSync(planted, "utf-8")).toBe("<p>mine</p>");
   });
 
-  it("fails closed on page output nested inside the owned artifact directories", async () => {
+  it("fails closed on a site-written manifest instead of overwriting it", async () => {
     const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
-    mkdirSync(join(directory, "taproot-docs", "fragments", "user-page"), { recursive: true });
-    writeFileSync(
-      join(directory, "taproot-docs", "fragments", "user-page", "index.html"),
-      "<p>mine</p>",
+    const planted = join(directory, "taproot-docs-manifest.json");
+    writeFileSync(planted, "{\"mine\": true}");
+
+    await expect(emit({ outputDirectory: directory }))
+      .rejects.toThrow(/reserved Docs artifact namespace \(taproot-docs-manifest\.json\)/u);
+    expect(readFileSync(planted, "utf-8")).toBe("{\"mine\": true}");
+  });
+
+  it("reads asset sources from the configured assetsRoot", async () => {
+    const assetsRoot = mkdtempSync(join(tmpdir(), "taproot-docs-assets-"));
+    mkdirSync(join(assetsRoot, "assets"), { recursive: true });
+    writeFileSync(join(assetsRoot, "assets", "overview.bin"), png);
+
+    const { directory } = await emit({
+      options: makeOptions({ assetsRoot }),
+      io: { readAssetFile: undefined },
+    });
+
+    const manifest = JSON.parse(
+      readFileSync(join(directory, "taproot-docs-manifest.json"), "utf-8"),
     );
-
-    await expect(emit({ outputDirectory: directory }))
-      .rejects.toThrow(/entries the emitter does not own \(fragments\/user-page\)/u);
-    expect(
-      existsSync(join(directory, "taproot-docs", "fragments", "user-page", "index.html")),
-    ).toBe(true);
+    expect(manifest.assets[0]).toMatchObject({ key: "diagram-overview", width: 1, height: 1 });
   });
 
   it("wraps contract validation failures for schema-incompatible configuration", async () => {
@@ -294,12 +302,18 @@ describe("wtfmPlugin taprootDocs wiring", () => {
     return config;
   }
 
-  it("registers the collection and emits through the eleventy.after hook", async () => {
+  it("cleans stale artifacts before the build and emits through eleventy.after", async () => {
     const workspace = mkdtempSync(join(tmpdir(), "taproot-docs-plugin-"));
     const cemPath = join(workspace, "custom-elements.json");
     writeFileSync(cemPath, JSON.stringify(makeCem()));
     writeFileSync(join(workspace, "overview.bin"), png);
     const outputDirectory = join(workspace, "_site");
+
+    // A previous build's artifact output: the eleventy.before hook must
+    // remove it so the emitter can treat later occupants as fresh content.
+    mkdirSync(join(outputDirectory, "taproot-docs", "fragments"), { recursive: true });
+    writeFileSync(join(outputDirectory, "taproot-docs", "fragments", "stale.html"), "<p>old</p>");
+    writeFileSync(join(outputDirectory, "taproot-docs-manifest.json"), "{}");
 
     const config = createMockEleventyConfig();
     wtfmPlugin(config, {
@@ -312,6 +326,13 @@ describe("wtfmPlugin taprootDocs wiring", () => {
     });
 
     expect(typeof config.collections.taprootDocsDocuments).toBe("function");
+    expect(typeof config.events["eleventy.before"]).toBe("function");
+    config.events["eleventy.before"]({
+      directories: { input: workspace, output: outputDirectory },
+      outputMode: "fs",
+    });
+    expect(existsSync(join(outputDirectory, "taproot-docs", "fragments", "stale.html"))).toBe(false);
+
     config.collections.taprootDocsDocuments({ getAll: () => [] });
     await config.events["eleventy.after"]({
       directories: { input: workspace, output: outputDirectory },
