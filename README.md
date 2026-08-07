@@ -268,6 +268,9 @@ conformance suite in CI. Authored documents are plain Markdown: template
 syntax inside an opted-in body is outside the artifact contract.
 
 `_site/taproot-docs/` and `_site/taproot-docs-manifest.json` are emitter-owned
-and reset on every build; the build fails closed if that subtree contains
-anything the emitter did not write, so site content can never be silently
-deleted from the deployed output.
+and reset on every build. The build fails closed if that subtree contains
+anything shaped unlike emitter output — foreign top-level entries, nested
+directories, or non-regular files — so page output routed there is caught
+rather than silently deleted. Flat files inside `taproot-docs/fragments/` and
+`taproot-docs/assets/` are treated as artifact output from earlier builds and
+reset.

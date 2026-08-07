@@ -207,6 +207,21 @@ describe("emitTaprootDocsArtifact", () => {
     expect(existsSync(join(directory, "taproot-docs", "user-page", "index.html"))).toBe(true);
   });
 
+  it("fails closed on page output nested inside the owned artifact directories", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
+    mkdirSync(join(directory, "taproot-docs", "fragments", "user-page"), { recursive: true });
+    writeFileSync(
+      join(directory, "taproot-docs", "fragments", "user-page", "index.html"),
+      "<p>mine</p>",
+    );
+
+    await expect(emit({ outputDirectory: directory }))
+      .rejects.toThrow(/entries the emitter does not own \(fragments\/user-page\)/u);
+    expect(
+      existsSync(join(directory, "taproot-docs", "fragments", "user-page", "index.html")),
+    ).toBe(true);
+  });
+
   it("wraps contract validation failures for schema-incompatible configuration", async () => {
     await expect(emit({
       documents: makeDocuments({ kind: "tutorial" }),

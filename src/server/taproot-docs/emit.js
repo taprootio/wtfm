@@ -99,15 +99,32 @@ function fragmentPathFor(key, locale) {
 }
 
 function assertArtifactSubtreeIsEmitterOwned(outputDirectory) {
+  const root = join(outputDirectory, "taproot-docs");
   let entries;
   try {
-    entries = readdirSync(join(outputDirectory, "taproot-docs"), { withFileTypes: true });
+    entries = readdirSync(root, { withFileTypes: true });
   } catch {
     return; // No subtree yet — nothing to protect.
   }
+  // Emitter output is exactly two directories of flat regular files, so any
+  // other top-level entry — and any nested directory or non-regular entry
+  // inside the owned directories — is site content a reset would destroy.
   const foreign = entries
     .filter((entry) => !(entry.isDirectory() && ["assets", "fragments"].includes(entry.name)))
     .map((entry) => entry.name);
+  for (const owned of ["assets", "fragments"]) {
+    let ownedEntries;
+    try {
+      ownedEntries = readdirSync(join(root, owned), { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    foreign.push(
+      ...ownedEntries
+        .filter((entry) => !entry.isFile())
+        .map((entry) => `${owned}/${entry.name}`),
+    );
+  }
   if (foreign.length > 0) {
     fail(
       `the output "taproot-docs" directory contains entries the emitter does not own (${foreign.join(", ")}) — that subtree and ${MANIFEST_FILE_NAME} are reserved for the Docs artifact and are reset on every build; move site content elsewhere.`,
