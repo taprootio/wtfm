@@ -3,13 +3,14 @@
   "milestones": [
     "Alpha",
     "Help & Docs Surfaces",
+    "Taproot Docs — GitHub to Production",
     "Beta",
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0010",
+  "nextId": "WTFM0011",
   "counts": {
-    "active": 1,
+    "active": 2,
     "completed": 8,
     "removed": 0
   },
@@ -31,6 +32,18 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
+    },
+    {
+      "id": "WTFM0010",
+      "title": "Emit Taproot Docs artifacts from the Eleventy build",
+      "status": "active",
+      "milestone": "Taproot Docs — GitHub to Production",
+      "priority": "High",
+      "effort": 8,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Add an opt-in, additive Taproot Docs build mode that emits the @taprootio/docs-artifact@1.0.1 manifest, semantic fragments, and declared assets beside the ordinary portable _site output, deterministically and fail-closed, with a real Eleventy fixture and CI conformance command."
     },
     {
       "id": "WTFM0001",
