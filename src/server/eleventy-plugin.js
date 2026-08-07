@@ -19,6 +19,7 @@ import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
 import { buildHelpManifest } from "./help-manifest.js";
 import { collectTaprootDocsDocuments } from "./taproot-docs/documents.js";
+import { emitTaprootDocsArtifact } from "./taproot-docs/emit.js";
 import { resolveTaprootDocsOptions } from "./taproot-docs/options.js";
 import { applyPathPrefixToHtml } from "./urls.js";
 
@@ -633,6 +634,19 @@ type ${decl.name} = ${decl.type.text}
       `${JSON.stringify(manifest, null, 2)}\n`,
       "utf-8",
     );
+
+    // ── Taproot Docs artifact (opt-in, WTFM0010) ────────────────
+    if (taprootDocsOptions) {
+      await emitTaprootDocsArtifact({
+        options: taprootDocsOptions,
+        documents: taprootDocsDocuments,
+        surfaces,
+        customElements,
+        renderDeclaration,
+        outputDirectory,
+        projectRoot: resolve(directories.input ?? "."),
+      });
+    }
   });
 
   // ── Global data ──────────────────────────────────────────────
