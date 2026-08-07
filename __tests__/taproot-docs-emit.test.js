@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { mkdtempSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import wtfmPlugin from "../src/server/eleventy-plugin.js";
@@ -189,19 +197,37 @@ describe("emitTaprootDocsArtifact", () => {
   });
 
   it.each([
-    ["a flat page file", ["taproot-docs", "fragments"], "user-page.html", /taproot-docs\/fragments/u],
-    ["a nested page directory", ["taproot-docs", "user-page"], "index.html", /taproot-docs\/user-page/u],
-  ])("fails closed on %s in the artifact namespace without deleting it", async (_label, directorySegments, fileName, message) => {
+    ["a flat page file", ["taproot-docs", "fragments"], "user-page.html"],
+    ["a nested page directory", ["taproot-docs", "user-page"], "index.html"],
+  ])("fails closed on %s in the artifact namespace without deleting it", async (_label, directorySegments, fileName) => {
     const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
     mkdirSync(join(directory, ...directorySegments), { recursive: true });
     const planted = join(directory, ...directorySegments, fileName);
     writeFileSync(planted, "<p>mine</p>");
 
     await expect(emit({ outputDirectory: directory }))
-      .rejects.toThrow(/reserved Docs artifact namespace/u);
-    await expect(emit({ outputDirectory: directory })).rejects.toThrow(message);
+      .rejects.toThrow(/reserved Docs artifact namespace \(taproot-docs\)/u);
     expect(existsSync(planted)).toBe(true);
     expect(readFileSync(planted, "utf-8")).toBe("<p>mine</p>");
+  });
+
+  it("rejects even an empty taproot-docs directory created by the build", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
+    mkdirSync(join(directory, "taproot-docs"));
+
+    await expect(emit({ outputDirectory: directory }))
+      .rejects.toThrow(/reserved Docs artifact namespace \(taproot-docs\)/u);
+    expect(existsSync(join(directory, "taproot-docs"))).toBe(true);
+  });
+
+  it("rejects a symlinked namespace without writing through it", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "taproot-docs-emit-"));
+    const external = mkdtempSync(join(tmpdir(), "taproot-docs-external-"));
+    symlinkSync(external, join(directory, "taproot-docs"));
+
+    await expect(emit({ outputDirectory: directory }))
+      .rejects.toThrow(/reserved Docs artifact namespace \(taproot-docs\)/u);
+    expect(readdirSync(external)).toEqual([]);
   });
 
   it("fails closed on a site-written manifest instead of overwriting it", async () => {

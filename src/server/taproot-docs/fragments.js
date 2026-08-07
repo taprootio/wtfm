@@ -239,6 +239,12 @@ export function renderDocsFragment(markdown, options) {
       });
     }
     if (token.type === "fence") {
+      if (token.attrs?.length) {
+        fail(
+          context,
+          `code fences may not carry authored attributes ("${token.attrs[0][0]}") — only the fence language is supported.`,
+        );
+      }
       normalizeFenceLanguage(token.info, context);
       continue;
     }

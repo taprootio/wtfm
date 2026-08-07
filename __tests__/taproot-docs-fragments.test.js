@@ -138,6 +138,11 @@ describe("renderDocsFragment", () => {
       .toThrow(/image attribute "class" is not supported/u);
   });
 
+  it("rejects authored attributes on fenced code blocks", () => {
+    expect(() => render("```js {.fancy}\nconst x = 1;\n```\n"))
+      .toThrow(/code fences may not carry authored attributes \("class"\)/u);
+  });
+
   it("strips presentational table alignment styles", () => {
     const { html } = render("| Left | Right |\n|:-----|------:|\n| a | b |\n");
     expect(html).toContain("<table>");

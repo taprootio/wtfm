@@ -20,7 +20,7 @@
 
 import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { lstatSync, readFileSync, rmSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import {
@@ -112,20 +112,22 @@ export function cleanTaprootDocsArtifact(outputDirectory) {
 }
 
 function assertArtifactNamespaceIsFree(outputDirectory) {
+  // lstat, never readdir or exists: an empty directory is still a conflict
+  // (the pre-build clean removed the previous artifact, so anything here was
+  // created by this build), and a symlink must be detected as itself — never
+  // followed — or the artifact would be written outside the output tree.
   const conflicts = [];
-  if (existsSync(join(outputDirectory, MANIFEST_FILE_NAME))) {
-    conflicts.push(MANIFEST_FILE_NAME);
+  for (const name of [MANIFEST_FILE_NAME, "taproot-docs"]) {
+    try {
+      lstatSync(join(outputDirectory, name));
+      conflicts.push(name);
+    } catch {
+      // Absent — the namespace entry is free.
+    }
   }
-  let entries = [];
-  try {
-    entries = readdirSync(join(outputDirectory, "taproot-docs"), { withFileTypes: true });
-  } catch {
-    // No subtree — the namespace is free.
-  }
-  conflicts.push(...entries.map((entry) => `taproot-docs/${entry.name}`));
   if (conflicts.length > 0) {
     fail(
-      `this build's site output wrote into the reserved Docs artifact namespace (${conflicts.join(", ")}) — ${MANIFEST_FILE_NAME} and the "taproot-docs" directory belong to the artifact emitter; move that content elsewhere.`,
+      `this build's site output occupies the reserved Docs artifact namespace (${conflicts.join(", ")}) — ${MANIFEST_FILE_NAME} and the "taproot-docs" directory belong to the artifact emitter; move that content elsewhere.`,
     );
   }
 }
