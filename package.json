@@ -104,6 +104,7 @@
     "build:server": "mkdir -p dist && rm -rf dist/server && cp -r src/server dist/server && tsc --project tsconfig.server.json",
     "build:client": "tsc --project tsconfig.json",
     "test": "vitest run",
+    "test:taproot-docs": "vitest run __tests__/taproot-docs-conformance.test.js __tests__/taproot-docs-emit.test.js __tests__/taproot-docs-fragments.test.js __tests__/taproot-docs-documents.test.js __tests__/taproot-docs-reference.test.js __tests__/taproot-docs-assets.test.js __tests__/taproot-docs-options.test.js",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
