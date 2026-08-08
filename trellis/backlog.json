@@ -3,14 +3,15 @@
   "milestones": [
     "Alpha",
     "Help & Docs Surfaces",
+    "Taproot Docs — GitHub to Production",
     "Beta",
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0010",
+  "nextId": "WTFM0011",
   "counts": {
     "active": 1,
-    "completed": 8,
+    "completed": 9,
     "removed": 0
   },
   "tasks": [
@@ -147,6 +148,19 @@
       "collaborators": [],
       "summary": "Rename the client runtime's optional peer dependency and import from the legacy @taprootio/taproot-controls package to the public @taprootio/espalier name, so Espalier's repo can drop its GitHub Packages scope routing entirely.",
       "completed_on": "2026-07-23"
+    },
+    {
+      "id": "WTFM0010",
+      "title": "Emit Taproot Docs artifacts from the Eleventy build",
+      "status": "completed",
+      "milestone": "Taproot Docs — GitHub to Production",
+      "priority": "High",
+      "effort": 8,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Add an opt-in, additive Taproot Docs build mode that emits the @taprootio/docs-artifact@1.0.1 manifest, semantic fragments, and declared assets beside the ordinary portable _site output, deterministically and fail-closed, with a real Eleventy fixture and CI conformance command.",
+      "completed_on": "2026-08-06"
     }
   ]
 }

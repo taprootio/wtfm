@@ -94,7 +94,7 @@ export function contextualizeAnchorError(error, context) {
  * @returns {string}
  */
 export function resolveAnchorId(title, options = {}) {
-  const { prefix, override, context = `heading "${title}"` } = options;
+  const { prefix, override, context = `heading "${title}"`, join = "--" } = options;
   const explicit = tagValue(override);
   if (explicit) return validateAnchorId(explicit, context);
 
@@ -103,7 +103,7 @@ export function resolveAnchorId(title, options = {}) {
     .filter((part) => part !== undefined && part !== null && `${part}`.trim())
     .map(slugifyAnchor);
   return prefixParts.length > 0
-    ? `${prefixParts.join("--")}--${generated}`
+    ? `${prefixParts.join(join)}${join}${generated}`
     : generated;
 }
 
@@ -113,6 +113,10 @@ export function resolveAnchorId(title, options = {}) {
  * @param {number} level
  * @param {string} title
  * @param {object} [options]
+ * @param {string} [options.join="--"] - Separator between prefix parts and
+ *   the generated slug. The Taproot Docs semantic mode passes "-" because
+ *   the artifact contract's heading ids allow only single-hyphen runs;
+ *   explicit overrides bypass joining entirely.
  * @returns {string}
  */
 export function renderAnchoredHeading(level, title, options = {}) {
@@ -132,8 +136,12 @@ export function renderAnchoredHeading(level, title, options = {}) {
  * @param {import("markdown-it")} markdownLib
  * @returns {import("markdown-it")}
  */
-export function configureMarkdownAnchors(markdownLib) {
-  markdownLib.use(markdownItAttrs, { allowedAttributes: ["id"] });
+export function configureMarkdownAnchors(markdownLib, { allowedAttributes = ["id"] } = {}) {
+  // Site rendering keeps the historical id-only filter. The Taproot Docs
+  // fragment pipeline passes `allowedAttributes: null` so authored curly
+  // attributes are *retained* for its own fail-closed validation instead of
+  // being silently discarded here.
+  markdownLib.use(markdownItAttrs, allowedAttributes ? { allowedAttributes } : {});
   markdownLib.use(markdownItAnchor, {
     slugify: slugifyAnchor,
     tabIndex: false,

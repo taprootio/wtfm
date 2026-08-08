@@ -1,3 +1,16 @@
+## [0.16.0](https://github.com/taprootio/wtfm/compare/v0.15.0...v0.16.0) (2026-08-06)
+
+
+### Features
+
+* opt-in, additive Taproot Docs build mode: the Eleventy build emits the
+  `@taprootio/docs-artifact@1.0.1` manifest, constrained semantic fragments
+  for opted-in authored documents and documentation surfaces, declared raster
+  assets, explicit navigation and redirects, and fail-closed Git/package
+  provenance beside the unchanged portable `_site` output; the written
+  artifact is re-validated through the pinned contract package before the
+  build succeeds (WTFM0010)
+
 ## [0.15.0](https://github.com/taprootio/wtfm/compare/v0.14.0...v0.15.0) (2026-07-23)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@taprootio/wtfm",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "WTFM — documentation tooling for Custom Elements Manifest-based component libraries",
   "type": "module",
   "bin": {
@@ -104,6 +104,7 @@
     "build:server": "mkdir -p dist && rm -rf dist/server && cp -r src/server dist/server && tsc --project tsconfig.server.json",
     "build:client": "tsc --project tsconfig.json",
     "test": "vitest run",
+    "test:taproot-docs": "vitest run __tests__/taproot-docs-conformance.test.js __tests__/taproot-docs-emit.test.js __tests__/taproot-docs-fragments.test.js __tests__/taproot-docs-documents.test.js __tests__/taproot-docs-reference.test.js __tests__/taproot-docs-assets.test.js __tests__/taproot-docs-options.test.js",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
@@ -115,6 +116,7 @@
   "license": "ISC",
   "dependencies": {
     "@11ty/posthtml-urls": "^1.0.3",
+    "@taprootio/docs-artifact": "1.0.1",
     "markdown-it": "^14.1.0",
     "markdown-it-anchor": "^9.2.1",
     "markdown-it-attrs": "^5.0.0",

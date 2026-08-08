@@ -17,7 +17,7 @@ export const parametersRenderer = {
       params.length,
     );
     const headingOffset = options.headingOffset ?? 0;
-    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix, join: options.anchorJoin })}\n\n${introText}\n\n`;
 
     for (const param of params) {
       const description =
@@ -44,6 +44,8 @@ export const parametersRenderer = {
           prefix: [options.anchorPrefix, this.key],
           override: param.helpAnchor,
           level: 3 + headingOffset,
+          join: options.anchorJoin,
+          semantic: options.semantic,
           pathPrefix: options.pathPrefix,
         },
       );

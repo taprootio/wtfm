@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "modules": [
+    {
+      "path": "src/test-widget.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "TestWidget",
+          "customElement": true,
+          "tagName": "test-widget",
+          "description": "A widget that does widget things.\n\n```html\n<test-widget label=\"Demo\"></test-widget>\n```",
+          "docSurface": { "name": "widget", "description": "" },
+          "docSurfaceTitle": { "name": "Widget surface", "description": "" },
+          "docSurfaceParts": { "name": "test-widget", "description": "" },
+          "docSections": { "name": "attributes", "description": "" },
+          "attributes": [
+            {
+              "name": "label",
+              "type": { "text": "string" },
+              "default": "\"\"",
+              "description": "The label rendered inside the widget."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

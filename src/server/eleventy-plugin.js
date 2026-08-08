@@ -18,6 +18,9 @@ import {
 import { collectSurfaces, findSurface } from "./surfaces.js";
 import { renderHelpDocument } from "./help-document.js";
 import { buildHelpManifest } from "./help-manifest.js";
+import { collectTaprootDocsDocuments } from "./taproot-docs/documents.js";
+import { cleanTaprootDocsArtifact, emitTaprootDocsArtifact } from "./taproot-docs/emit.js";
+import { resolveTaprootDocsOptions } from "./taproot-docs/options.js";
 import { applyPathPrefixToHtml } from "./urls.js";
 
 /**
@@ -193,6 +196,13 @@ function buildFunctionSignature(decl) {
  *   replace that built-in. To include custom sections in the output,
  *   add their keys to the `sections` option or use `@docSections` in
  *   the component source.
+ *
+ * @param {object} [options.taprootDocs] - Opt-in Taproot Docs artifact mode
+ *   (WTFM0010). When present, the build additionally emits the
+ *   `@taprootio/docs-artifact` manifest, semantic fragments, and declared
+ *   assets beside the unchanged portable output. See the README's
+ *   "Taproot Docs artifacts" section for the configuration reference and
+ *   per-document front-matter contract.
  */
 export default function wtfmPlugin(eleventyConfig, options = {}) {
   const {
@@ -206,7 +216,28 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
     customRenderers,
     referenceUrlBuilder,
     helpUrlBuilder,
+    taprootDocs,
   } = options;
+
+  // ── Taproot Docs artifact mode (opt-in, WTFM0010) ─────────────
+  // Resolved eagerly so a misconfigured docs build fails at plugin setup,
+  // not partway through an emit. `null` means the mode is off and the
+  // plugin behaves exactly as before.
+  const taprootDocsOptions = resolveTaprootDocsOptions(taprootDocs);
+  let taprootDocsDocuments = null;
+  if (taprootDocsOptions) {
+    eleventyConfig.addCollection("taprootDocsDocuments", (collectionApi) => {
+      taprootDocsDocuments = collectTaprootDocsDocuments(collectionApi);
+      return taprootDocsDocuments;
+    });
+    // Remove the previous build's artifact before this build renders, so the
+    // emitter can treat any occupant of the artifact namespace as freshly
+    // rendered site content and fail closed instead of deleting it.
+    eleventyConfig.on("eleventy.before", ({ directories, outputMode }) => {
+      if (outputMode !== undefined && outputMode !== "fs") return;
+      cleanTaprootDocsArtifact(resolve(directories.output));
+    });
+  }
 
   // ── Resolved options (passed to every renderer) ───────────────
   const resolvedOptions = {
@@ -387,7 +418,11 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
       // demos in their natural document flow.
       const cemContext = buildCemContext(decl, resolvedOptions);
       let cleanDescription = decl.description || "";
-      let codeIdx = cleanDescription.indexOf("```html");
+      // Semantic (Taproot Docs) rendering keeps authored ```html fences as
+      // plain code samples instead of interactive <wtfm-code-block> demos.
+      let codeIdx = renderOverrides.semantic === true
+        ? -1
+        : cleanDescription.indexOf("```html");
       while (codeIdx >= 0) {
         const endIdx = cleanDescription.indexOf("```", codeIdx + 7);
         if (endIdx < 0) break;
@@ -613,6 +648,19 @@ type ${decl.name} = ${decl.type.text}
       `${JSON.stringify(manifest, null, 2)}\n`,
       "utf-8",
     );
+
+    // ── Taproot Docs artifact (opt-in, WTFM0010) ────────────────
+    if (taprootDocsOptions) {
+      await emitTaprootDocsArtifact({
+        options: taprootDocsOptions,
+        documents: taprootDocsDocuments,
+        surfaces,
+        customElements,
+        renderDeclaration,
+        outputDirectory,
+        projectRoot: resolve(directories.input ?? "."),
+      });
+    }
   });
 
   // ── Global data ──────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import * as prettier from "prettier";
 import { buildCemContext } from "./build-cem-context.js";
 import { renderAnchoredHeading } from "../anchors.js";
+import { renderSemanticFence } from "./build-doc-section.js";
 import { applyPathPrefixToHtml } from "../urls.js";
 
 /**
@@ -60,11 +61,6 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext, optio
     if (!htmlCode) continue;
 
     const formatted = await formatHtml(htmlCode);
-    const prefixedHtml = await applyPathPrefixToHtml(
-      formatted,
-      options.pathPrefix,
-    );
-    const encoded = Buffer.from(prefixedHtml).toString("base64");
     const title = example.title || "";
 
     let block = "";
@@ -72,11 +68,24 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext, optio
       block += `\n${renderAnchoredHeading(3 + headingOffset, title, {
         prefix: [options.anchorPrefix, "examples"],
         override: example.helpAnchor,
+        join: options.anchorJoin,
       })}\n\n`;
     }
-    block += `<wtfm-code-block tag-name="${tagName}" source="${encoded}">
+    if (options.semantic) {
+      // Taproot Docs fragments are host-independent semantic markup: the demo
+      // stays a plain code sample with no path prefix and no interactive
+      // <wtfm-code-block> wrapper.
+      block += `${renderSemanticFence(formatted, "html")}\n`;
+    } else {
+      const prefixedHtml = await applyPathPrefixToHtml(
+        formatted,
+        options.pathPrefix,
+      );
+      const encoded = Buffer.from(prefixedHtml).toString("base64");
+      block += `<wtfm-code-block tag-name="${tagName}" source="${encoded}">
   <script type="application/json">${cemContext.cemJson}</script>
 </wtfm-code-block>\n`;
+    }
 
     blocks.push(block);
   }
@@ -85,6 +94,7 @@ async function renderExampleBlocks(examples, tagName, heading, cemContext, optio
 
   return `\n${renderAnchoredHeading(2 + headingOffset, heading, {
     prefix: options.anchorPrefix,
+    join: options.anchorJoin,
   })}\n\n${blocks.join("\n")}`;
 }
 

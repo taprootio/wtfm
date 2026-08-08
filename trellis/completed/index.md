@@ -6,6 +6,7 @@ a task and regenerate (`npx @taprootio/trellis generate`).
 <!-- BEGIN GENERATED:COMPLETED -->
 | ID | Title | Summary | Completed |
 | --- | --- | --- | --- |
+| [WTFM0010](tasks/WTFM0010.md) | Emit Taproot Docs artifacts from the Eleventy build | Add an opt-in, additive Taproot Docs build mode that emits the @taprootio/docs-artifact@1.0.1 manifest, semantic fragments, and declared assets beside the ordinary portable _site output, deterministically and fail-closed, with a real Eleventy fixture and CI conformance command. | 2026-08-06 |
 | [WTFM0001](tasks/WTFM0001.md) | Publish @taprootio/wtfm to the public npm registry | Move publishing from the private GitHub Packages registry to the public npm registry so @taprootio/wtfm installs without GitHub auth; ship 0.13.0 as the first public release. | 2026-07-23 |
 | [WTFM0002](tasks/WTFM0002.md) | Switch npm publishing to Trusted Publishing (OIDC) | Configure npm Trusted Publishing so the publish workflow authenticates via GitHub Actions OIDC, then retire the short-lived NPM_TOKEN secret entirely. | 2026-07-23 |
 | [WTFM0004](tasks/WTFM0004.md) | Emit stable heading anchors across rendered docs | Give every rendered heading a deterministic, collision-safe id — namespaced on composed surfaces and exactly overridable from Markdown or CEM metadata — so reference docs remain stable and authored help anchors can match Espalier field-names. | 2026-07-23 |

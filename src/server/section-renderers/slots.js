@@ -16,7 +16,7 @@ export const slotsRenderer = {
     const introText = resolveIntro(this.intro, decl.tagName, decl.slots.length);
     const cemContext = buildCemContext(decl, options);
     const headingOffset = options.headingOffset ?? 0;
-    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix })}\n\n${introText}\n\n`;
+    let result = `\n${renderAnchoredHeading(2 + headingOffset, this.heading, { prefix: options.anchorPrefix, join: options.anchorJoin })}\n\n${introText}\n\n`;
 
     for (const slot of decl.slots) {
       result += await buildDocSection(
@@ -28,6 +28,8 @@ export const slotsRenderer = {
           prefix: [options.anchorPrefix, this.key],
           override: slot.helpAnchor,
           level: 3 + headingOffset,
+          join: options.anchorJoin,
+          semantic: options.semantic,
           pathPrefix: options.pathPrefix,
         },
       );
