@@ -10,6 +10,24 @@ tooling for documenting component libraries from their
 npm install --save-dev @taprootio/wtfm
 ```
 
+## Build this repository's documentation
+
+The real WTFM product documentation lives under `docs/` and imports the
+working tree's `src/server/eleventy-plugin.js`, so it never depends on a
+previously released WTFM package. Build the portable site and schema-v1 Taproot
+Docs artifact together, then validate the artifact through the pinned released
+contract:
+
+```bash
+npm run docs:build
+npm run docs:validate
+```
+
+Both outputs are written to `docs/_site/`. Run `npm run docs:test` for the
+focused determinism, provenance, no-network, and portable-site checks. These
+commands only build and validate local files; publishing is owned by the
+consuming Taproot workflow.
+
 ## Entry points
 
 - `@taprootio/wtfm` (or `/plugin`) — the Eleventy plugin.

@@ -1,4 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { lstatSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,13 +31,30 @@ function parseOutputArgument(args) {
   return path.resolve(repositoryRoot, args[1]);
 }
 
+const actualRepositoryRoot = realpathSync(repositoryRoot);
+const discoveredGitRoot = gitValue(
+  ["rev-parse", "--show-toplevel"],
+  "repository root",
+);
+let actualGitRoot;
+try {
+  actualGitRoot = realpathSync(discoveredGitRoot);
+} catch {
+  fail("the discovered Git worktree root could not be resolved.");
+}
+if (actualGitRoot !== actualRepositoryRoot) {
+  fail(
+    "the WTFM source directory is not its own Git worktree; refusing provenance from an enclosing repository.",
+  );
+}
+
 const revision = gitValue(["rev-parse", "HEAD"], "source revision");
 if (!/^[0-9a-f]{40}$/u.test(revision)) {
   fail("Git HEAD did not resolve to a full lowercase 40-character revision.");
 }
 
 const sourceDateEpoch = gitValue(
-  ["show", "-s", "--format=%ct", "HEAD"],
+  ["show", "-s", "--format=%ct", revision],
   "source commit epoch",
 );
 if (!/^\d+$/u.test(sourceDateEpoch)) {
@@ -43,14 +62,61 @@ if (!/^\d+$/u.test(sourceDateEpoch)) {
 }
 
 const outputDirectory = parseOutputArgument(process.argv.slice(2));
-const forbiddenOutputs = [
-  repositoryRoot,
-  path.join(repositoryRoot, "docs"),
-  path.join(repositoryRoot, "docs", "content"),
-];
-if (forbiddenOutputs.includes(outputDirectory)) {
-  fail(`refusing unsafe output directory '${outputDirectory}'.`);
+const canonicalOutput = path.join(actualRepositoryRoot, "docs", "_site");
+const actualTemporaryRoot = realpathSync(tmpdir());
+
+function pathIsInside(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return (
+    relative === "" ||
+    (relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
+  );
 }
+
+function validateOutputDirectory(directory) {
+  if (path.basename(directory) !== "_site") {
+    fail("the output directory must be named '_site'.");
+  }
+
+  let parent;
+  try {
+    const parentStats = lstatSync(path.dirname(directory));
+    if (!parentStats.isDirectory() || parentStats.isSymbolicLink()) {
+      fail("the output parent must be a real directory, not a symbolic link.");
+    }
+    parent = realpathSync(path.dirname(directory));
+  } catch (error) {
+    if (error?.code !== undefined) {
+      fail("the output parent must already exist as a real directory.");
+    }
+    throw error;
+  }
+
+  const isCanonical =
+    directory === canonicalOutput && parent === path.dirname(canonicalOutput);
+  const isTemporary = pathIsInside(actualTemporaryRoot, parent);
+  if (!isCanonical && !isTemporary) {
+    fail(
+      "the output directory must be docs/_site or an _site directory under the operating-system temporary root.",
+    );
+  }
+
+  try {
+    const outputStats = lstatSync(directory);
+    if (!outputStats.isDirectory() || outputStats.isSymbolicLink()) {
+      fail(
+        "the output target must be a real directory when it already exists.",
+      );
+    }
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
+validateOutputDirectory(outputDirectory);
+rmSync(outputDirectory, { recursive: true, force: true });
 
 const eleventyCli = path.join(
   repositoryRoot,

@@ -2,7 +2,6 @@ import { fileURLToPath } from "node:url";
 import wtfmPlugin from "../src/server/eleventy-plugin.js";
 import { navigation, taprootNavigation } from "./navigation.js";
 
-const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const revision = process.env.WTFM_DOCS_REVISION;
 if (!/^[0-9a-f]{40}$/u.test(revision ?? "")) {
   throw new Error(

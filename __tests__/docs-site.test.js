@@ -1,5 +1,15 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { access, cp, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import {
+  access,
+  copyFile,
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +19,11 @@ import { validateArtifactDirectory } from "@taprootio/docs-artifact/node";
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const packageJsonPath = path.join(repositoryRoot, "package.json");
 const docsConfigPath = path.join(repositoryRoot, "docs", "eleventy.config.js");
+const docsBuildScriptPath = path.join(
+  repositoryRoot,
+  "scripts",
+  "build-docs.js",
+);
 const networkGuardPath = path.join(
   repositoryRoot,
   "__tests__",
@@ -68,6 +83,14 @@ function runDocsBuild({ output, networkLog }) {
 }
 
 function assertBuildSucceeded(result) {
+  expect(
+    result.status,
+    [result.stdout, result.stderr].filter(Boolean).join("\n"),
+  ).toBe(0);
+}
+
+function runGit(cwd, args) {
+  const result = spawnSync("git", args, { cwd, encoding: "utf-8" });
   expect(
     result.status,
     [result.stdout, result.stderr].filter(Boolean).join("\n"),
@@ -260,6 +283,57 @@ describe("real WTFM documentation project", () => {
   it("builds successfully with all network entry points blocked", async () => {
     await expect(access(firstNetworkLog)).rejects.toThrow();
     await expect(access(secondNetworkLog)).rejects.toThrow();
+  });
+
+  it("fails closed instead of borrowing provenance from an enclosing repository", async () => {
+    const outerRepository = await mkdtemp(
+      path.join(tmpdir(), "wtfm-enclosing-repository-"),
+    );
+    temporaryRoots.push(outerRepository);
+    await writeFile(
+      path.join(outerRepository, "README.md"),
+      "outer repository\n",
+    );
+    runGit(outerRepository, ["init", "--quiet"]);
+    runGit(outerRepository, ["add", "README.md"]);
+    runGit(outerRepository, [
+      "-c",
+      "user.name=WTFM Test",
+      "-c",
+      "user.email=wtfm-test@example.invalid",
+      "commit",
+      "--quiet",
+      "-m",
+      "outer repository",
+    ]);
+
+    const nestedCheckout = path.join(outerRepository, "vendor", "wtfm");
+    const nestedScript = path.join(nestedCheckout, "scripts", "build-docs.js");
+    await mkdir(path.dirname(nestedScript), { recursive: true });
+    await copyFile(docsBuildScriptPath, nestedScript);
+
+    const result = spawnSync(process.execPath, [nestedScript], {
+      cwd: nestedCheckout,
+      encoding: "utf-8",
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "the WTFM source directory is not its own Git worktree",
+    );
+  });
+
+  it("removes retired ordinary pages before rebuilding the output directory", async () => {
+    const staleBuild = await makeBuildTarget("stale");
+    const stalePage = path.join(
+      staleBuild.output,
+      "retired-page",
+      "index.html",
+    );
+    await mkdir(path.dirname(stalePage), { recursive: true });
+    await writeFile(stalePage, "retired documentation\n");
+
+    assertBuildSucceeded(runDocsBuild(staleBuild));
+    await expect(access(stalePage)).rejects.toThrow();
   });
 
   it("leaves a navigable portable static site after the semantic payload is removed", async () => {
