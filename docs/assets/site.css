@@ -1,0 +1,262 @@
+:root {
+  color-scheme: light;
+  --ink: #18211d;
+  --muted: #5a665f;
+  --paper: #f6f4ed;
+  --panel: #fffdf7;
+  --line: #d8d5c9;
+  --brand: #075f4d;
+  --brand-dark: #06483b;
+  --accent: #d9f05a;
+  --code: #13211c;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  line-height: 1.6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+a {
+  color: var(--brand);
+  text-underline-offset: 0.18em;
+}
+a:hover {
+  color: var(--brand-dark);
+}
+a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  color: white;
+  background: var(--brand-dark);
+  transform: translateY(-180%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.site-header {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem clamp(1rem, 4vw, 3rem);
+  color: white;
+  background: var(--brand-dark);
+}
+
+.site-header a {
+  color: inherit;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.wordmark [aria-hidden] {
+  padding: 0.12rem 0.45rem;
+  color: var(--brand-dark);
+  background: var(--accent);
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+}
+
+.repository {
+  font-size: 0.9rem;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(13rem, 18rem) minmax(0, 52rem);
+  gap: clamp(2rem, 5vw, 5rem);
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 2.5rem clamp(1rem, 4vw, 3rem) 5rem;
+}
+
+nav {
+  align-self: start;
+}
+.nav-group + .nav-group {
+  margin-top: 1.5rem;
+}
+.nav-group h2 {
+  margin: 0 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.nav-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nav-group a {
+  display: block;
+  padding: 0.28rem 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav-group a[aria-current="page"] {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+main {
+  min-width: 0;
+}
+.page-header {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.eyebrow {
+  margin: 0 0 0.6rem;
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+}
+.lede {
+  max-width: 44rem;
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 1.18rem;
+}
+
+article {
+  padding-top: 1.3rem;
+}
+article h2 {
+  margin: 2.4rem 0 0.6rem;
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+article h3 {
+  margin: 1.6rem 0 0.4rem;
+  font-size: 1.15rem;
+}
+article p,
+article ul,
+article ol,
+article table,
+article pre,
+article blockquote {
+  max-width: 46rem;
+}
+article li + li {
+  margin-top: 0.35rem;
+}
+article code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.9em;
+}
+article :not(pre) > code {
+  padding: 0.1rem 0.28rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+pre {
+  overflow-x: auto;
+  padding: 1rem 1.1rem;
+  border-radius: 0.35rem;
+  color: #effbf5;
+  background: var(--code);
+  line-height: 1.5;
+}
+blockquote {
+  margin-left: 0;
+  padding-left: 1rem;
+  border-left: 4px solid var(--accent);
+  color: var(--muted);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 0.55rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.page-footer {
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 760px) {
+  .repository {
+    display: none;
+  }
+  .shell {
+    grid-template-columns: 1fr;
+    padding-top: 1.4rem;
+  }
+  nav {
+    padding-bottom: 1.4rem;
+    border-bottom: 1px solid var(--line);
+    columns: 2;
+    column-gap: 1.5rem;
+  }
+  .nav-group {
+    break-inside: avoid;
+  }
+  .nav-group + .nav-group {
+    margin-top: 0;
+    margin-bottom: 1.2rem;
+  }
+}
+
+@media (max-width: 460px) {
+  nav {
+    columns: 1;
+  }
+  .wordmark span:last-child {
+    display: none;
+  }
+}
