@@ -16,6 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validateArtifactDirectory } from "@taprootio/docs-artifact/node";
+import { taprootNavigation } from "../docs/navigation.js";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const packageJsonPath = path.join(repositoryRoot, "package.json");
@@ -57,6 +58,8 @@ let firstBuild;
 let secondBuild;
 let firstNetworkLog;
 let secondNetworkLog;
+let firstNetworkGuardLoadedLog;
+let secondNetworkGuardLoadedLog;
 
 async function makeBuildTarget(label) {
   const root = await mkdtemp(path.join(tmpdir(), `wtfm-real-docs-${label}-`));
@@ -64,23 +67,29 @@ async function makeBuildTarget(label) {
   return {
     output: path.join(root, "_site"),
     networkLog: path.join(root, "network-attempts.log"),
+    networkGuardLoadedLog: path.join(root, "network-guard-loaded.log"),
   };
 }
 
-function runDocsBuild({ output, networkLog }) {
+function runDocsBuild({ output, networkLog, networkGuardLoadedLog }) {
   const inheritedNodeOptions = process.env.NODE_OPTIONS?.trim();
   const guardOption = `--require=${networkGuardPath}`;
-  return spawnSync("npm", ["run", "docs:build", "--", "--output", output], {
-    cwd: repositoryRoot,
-    encoding: "utf-8",
-    env: {
-      ...process.env,
-      NODE_OPTIONS: inheritedNodeOptions
-        ? `${inheritedNodeOptions} ${guardOption}`
-        : guardOption,
-      WTFM_NETWORK_GUARD_LOG: networkLog,
+  return spawnSync(
+    "npm",
+    ["run", "docs:build", "--", "--allow-dirty", "--output", output],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf-8",
+      env: {
+        ...process.env,
+        NODE_OPTIONS: inheritedNodeOptions
+          ? `${inheritedNodeOptions} ${guardOption}`
+          : guardOption,
+        WTFM_NETWORK_GUARD_LOG: networkLog,
+        WTFM_NETWORK_GUARD_LOADED_LOG: networkGuardLoadedLog,
+      },
     },
-  });
+  );
 }
 
 function assertBuildSucceeded(result) {
@@ -93,7 +102,7 @@ function assertBuildSucceeded(result) {
 function runDocsScript(output) {
   return spawnSync(
     process.execPath,
-    [docsBuildScriptPath, "--output", output],
+    [docsBuildScriptPath, "--allow-dirty", "--output", output],
     {
       cwd: repositoryRoot,
       encoding: "utf-8",
@@ -107,6 +116,42 @@ function runGit(cwd, args) {
     result.status,
     [result.stdout, result.stderr].filter(Boolean).join("\n"),
   ).toBe(0);
+}
+
+async function makeIsolatedTrackedCheckout() {
+  const root = await mkdtemp(path.join(tmpdir(), "wtfm-dirty-checkout-"));
+  temporaryRoots.push(root);
+  const trackedFiles = execFileSync("git", ["ls-files", "-z"], {
+    cwd: repositoryRoot,
+    encoding: "utf-8",
+  })
+    .split("\0")
+    .filter(Boolean);
+  for (const relative of trackedFiles) {
+    const destination = path.join(root, relative);
+    await mkdir(path.dirname(destination), { recursive: true });
+    await copyFile(path.join(repositoryRoot, relative), destination);
+  }
+  runGit(root, ["init", "--quiet"]);
+  runGit(root, ["add", "."]);
+  runGit(root, [
+    "-c",
+    "commit.gpgsign=false",
+    "-c",
+    "user.name=WTFM Test",
+    "-c",
+    "user.email=wtfm-test@example.invalid",
+    "commit",
+    "--quiet",
+    "-m",
+    "isolated checkout",
+  ]);
+  await symlink(
+    path.join(repositoryRoot, "node_modules"),
+    path.join(root, "node_modules"),
+    "dir",
+  );
+  return root;
 }
 
 async function walkFiles(root, prefix = "") {
@@ -148,6 +193,8 @@ beforeAll(async () => {
   secondBuild = second.output;
   firstNetworkLog = first.networkLog;
   secondNetworkLog = second.networkLog;
+  firstNetworkGuardLoadedLog = first.networkGuardLoadedLog;
+  secondNetworkGuardLoadedLog = second.networkGuardLoadedLog;
 
   const firstResult = runDocsBuild(first);
   assertBuildSucceeded(firstResult);
@@ -236,7 +283,7 @@ describe("real WTFM documentation project", () => {
     expect(manifest.resources.map((resource) => resource.key)).toEqual(
       expectedResourceKeys,
     );
-    expect(manifest.navigation[0].items.length).toBeGreaterThanOrEqual(3);
+    expect(manifest.navigation[0].items).toEqual(taprootNavigation);
     expect(manifest.redirects).toEqual([
       {
         from: "/installation/",
@@ -267,6 +314,7 @@ describe("real WTFM documentation project", () => {
     expect(fragments).toContain("wtfm-code-block");
     expect(fragments).toContain("help-manifest.json");
     expect(fragments).toContain("taproot-docs-manifest.json");
+    expect(fragments).toContain('id="what-wtfm-does"');
     expect(fragments).not.toMatch(
       /Fixture home|Fixture overview|TestWidget|test-widget|taprootio\/wtfm-fixture/u,
     );
@@ -293,9 +341,55 @@ describe("real WTFM documentation project", () => {
   });
 
   it("builds successfully with all network entry points blocked", async () => {
+    const loadedProcesses = (
+      await Promise.all([
+        readFile(firstNetworkGuardLoadedLog, "utf-8"),
+        readFile(secondNetworkGuardLoadedLog, "utf-8"),
+      ])
+    ).flatMap((log) => log.trim().split("\n"));
+    expect(
+      loadedProcesses.some((entry) =>
+        entry.replaceAll("\\", "/").endsWith("/@11ty/eleventy/cmd.cjs"),
+      ),
+    ).toBe(true);
     await expect(access(firstNetworkLog)).rejects.toThrow();
     await expect(access(secondNetworkLog)).rejects.toThrow();
   });
+
+  it("rejects dirty tracked sources unless local iteration explicitly opts out", async () => {
+    const checkout = await makeIsolatedTrackedCheckout();
+    const indexPath = path.join(checkout, "docs", "content", "index.md");
+    const index = await readFile(indexPath, "utf-8");
+    await writeFile(indexPath, `${index}\nDirty provenance probe.\n`);
+    const script = path.join(checkout, "scripts", "build-docs.js");
+
+    const rejected = spawnSync(process.execPath, [script], {
+      cwd: checkout,
+      encoding: "utf-8",
+    });
+    expect(rejected.status).toBe(1);
+    expect(rejected.stderr).toContain(
+      "the working tree has uncommitted tracked changes",
+    );
+
+    const allowed = spawnSync(process.execPath, [script, "--allow-dirty"], {
+      cwd: checkout,
+      encoding: "utf-8",
+    });
+    expect(allowed.status, allowed.stderr).toBe(0);
+    const fragment = await readFile(
+      path.join(
+        checkout,
+        "docs",
+        "_site",
+        "taproot-docs",
+        "fragments",
+        "concept-overview.en-us.html",
+      ),
+      "utf-8",
+    );
+    expect(fragment).toContain("Dirty provenance probe.");
+  }, 30_000);
 
   it("fails closed instead of borrowing provenance from an enclosing repository", async () => {
     const outerRepository = await mkdtemp(

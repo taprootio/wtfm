@@ -23,12 +23,29 @@ function gitValue(args, description) {
   }
 }
 
-function parseOutputArgument(args) {
-  if (args.length === 0) return path.join(repositoryRoot, "docs", "_site");
-  if (args.length !== 2 || args[0] !== "--output" || args[1].length === 0) {
-    fail("usage: npm run docs:build -- [--output <directory>]");
+function parseArguments(args) {
+  let outputDirectory = path.join(repositoryRoot, "docs", "_site");
+  let outputSeen = false;
+  let allowDirty = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--allow-dirty" && !allowDirty) {
+      allowDirty = true;
+      continue;
+    }
+    if (argument === "--output" && !outputSeen) {
+      const value = args[index + 1];
+      if (typeof value !== "string" || value === "" || value.startsWith("--")) {
+        fail("--output requires a directory value.");
+      }
+      outputDirectory = path.resolve(repositoryRoot, value);
+      outputSeen = true;
+      index += 1;
+      continue;
+    }
+    fail("usage: npm run docs:build -- [--allow-dirty] [--output <directory>]");
   }
-  return path.resolve(repositoryRoot, args[1]);
+  return { allowDirty, outputDirectory };
 }
 
 const actualRepositoryRoot = realpathSync(repositoryRoot);
@@ -53,6 +70,17 @@ if (!/^[0-9a-f]{40}$/u.test(revision)) {
   fail("Git HEAD did not resolve to a full lowercase 40-character revision.");
 }
 
+const { allowDirty, outputDirectory } = parseArguments(process.argv.slice(2));
+const workingTreeChanges = gitValue(
+  ["status", "--porcelain", "--untracked-files=no"],
+  "working tree state",
+);
+if (workingTreeChanges !== "" && !allowDirty) {
+  fail(
+    "the working tree has uncommitted tracked changes; artifact provenance would not describe the built source. Commit the changes or pass --allow-dirty for local iteration.",
+  );
+}
+
 const sourceDateEpoch = gitValue(
   ["show", "-s", "--format=%ct", revision],
   "source commit epoch",
@@ -61,7 +89,6 @@ if (!/^\d+$/u.test(sourceDateEpoch)) {
   fail("the Git HEAD commit epoch was not a non-negative integer.");
 }
 
-const outputDirectory = parseOutputArgument(process.argv.slice(2));
 const canonicalOutput = path.join(actualRepositoryRoot, "docs", "_site");
 const actualTemporaryRoot = realpathSync(tmpdir());
 
