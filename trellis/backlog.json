@@ -8,9 +8,9 @@
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0011",
+  "nextId": "WTFM0012",
   "counts": {
-    "active": 1,
+    "active": 2,
     "completed": 9,
     "removed": 0
   },
@@ -32,6 +32,20 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
+    },
+    {
+      "id": "WTFM0011",
+      "title": "Build WTFM's real documentation site and Taproot Docs artifact",
+      "status": "active",
+      "milestone": "Taproot Docs — GitHub to Production",
+      "priority": "High",
+      "effort": 5,
+      "depends_on": [
+        "WTFM0010"
+      ],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "Add a real, portable WTFM documentation site that uses the repository's local plugin implementation and emits a deterministic schema-v1 Taproot Docs artifact for local dogfooding and later hosted publication."
     },
     {
       "id": "WTFM0001",
