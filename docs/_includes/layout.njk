@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ description }}">
+    <title>{{ title }} · {{ site.name }}</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/site.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="WTFM documentation home">
+        <span aria-hidden="true">WTFM</span>
+        <span>Documentation</span>
+      </a>
+      <a class="repository" href="https://github.com/taprootio/wtfm">GitHub repository</a>
+    </header>
+    <div class="shell">
+      <nav aria-label="Primary">
+        {% for group in site.navigation %}
+          <section class="nav-group">
+            <h2>{{ group.label }}</h2>
+            <ul>
+              {% for item in group.items %}
+                <li>
+                  <a href="{{ item.url }}"{% if item.url == page.url %} aria-current="page"{% endif %}>{{ item.label }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endfor %}
+      </nav>
+      <main id="content">
+        <header class="page-header">
+          <p class="eyebrow">Write the F*in Manual</p>
+          <h1>{{ title }}</h1>
+          <p class="lede">{{ description }}</p>
+        </header>
+        <article>
+          {{ content | safe }}
+        </article>
+        <footer class="page-footer">
+          <a href="{{ page.inputPath | sourceUrl }}">View this page's source at the documented revision</a>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
