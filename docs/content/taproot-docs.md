@@ -93,8 +93,8 @@ It does not read credentials, contact Taproot, create a site, or publish.
 
 Use `npm run docs:build -- --allow-dirty` only for local editorial iteration.
 That explicit opt-out permits an artifact whose content is not represented by
-its recorded revision, so validate the layout locally but never publish those
-bytes.
+its recorded revision and prints a warning, so validate the layout locally but
+never publish those bytes.
 
 Validate the result with the released package contract:
 

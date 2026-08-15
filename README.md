@@ -31,7 +31,8 @@ consuming Taproot workflow.
 The canonical build fails when tracked files have changes or non-ignored
 untracked files are present because `HEAD` would not describe the emitted
 content. For local-only iteration, opt out explicitly with
-`npm run docs:build -- --allow-dirty`; never publish that output.
+`npm run docs:build -- --allow-dirty`; the build prints a warning because that
+output must never be published.
 
 ## Entry points
 

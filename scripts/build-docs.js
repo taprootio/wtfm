@@ -79,6 +79,10 @@ if (workingTreeChanges !== "" && !allowDirty) {
   fail(
     "the working tree has uncommitted source changes; artifact provenance would not describe the built source. Commit the changes or pass --allow-dirty for local iteration.",
   );
+} else if (workingTreeChanges !== "") {
+  process.stderr.write(
+    "wtfm docs: WARNING --allow-dirty: the emitted artifact contains uncommitted source and its recorded revision does not describe it. Do not publish this output.\n",
+  );
 }
 
 const sourceDateEpoch = gitValue(

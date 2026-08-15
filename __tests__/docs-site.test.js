@@ -416,27 +416,38 @@ describe("real WTFM documentation project", () => {
   });
 
   it("builds successfully with all network entry points blocked", async () => {
-    const loadedProcesses = (
-      await Promise.all([
-        readFile(firstNetworkGuardLoadedLog, "utf-8"),
-        readFile(secondNetworkGuardLoadedLog, "utf-8"),
-      ])
-    ).flatMap((log) => log.trim().split("\n"));
-    expect(
-      loadedProcesses.some((entry) =>
-        entry.replaceAll("\\", "/").endsWith("/@11ty/eleventy/cmd.cjs"),
-      ),
-    ).toBe(true);
+    for (const loadedLogPath of [
+      firstNetworkGuardLoadedLog,
+      secondNetworkGuardLoadedLog,
+    ]) {
+      const loadedLog = await readFile(loadedLogPath, "utf-8");
+      expect(
+        loadedLog
+          .trim()
+          .split("\n")
+          .some((entry) =>
+            entry.replaceAll("\\", "/").endsWith("/@11ty/eleventy/cmd.cjs"),
+          ),
+        loadedLogPath,
+      ).toBe(true);
+    }
     await expect(access(firstNetworkLog)).rejects.toThrow();
     await expect(access(secondNetworkLog)).rejects.toThrow();
   });
 
   it("rejects uncommitted source changes unless local iteration explicitly opts out", async () => {
     const checkout = await makeIsolatedTrackedCheckout();
+    const script = path.join(checkout, "scripts", "build-docs.js");
+    const pristine = spawnSync(process.execPath, [script], {
+      cwd: checkout,
+      encoding: "utf-8",
+    });
+    expect(pristine.status, pristine.stderr).toBe(0);
+    expect(pristine.stderr).not.toContain("WARNING --allow-dirty");
+
     const indexPath = path.join(checkout, "docs", "content", "index.md");
     const index = await readFile(indexPath, "utf-8");
     await writeFile(indexPath, `${index}\nDirty provenance probe.\n`);
-    const script = path.join(checkout, "scripts", "build-docs.js");
 
     const rejected = spawnSync(process.execPath, [script], {
       cwd: checkout,
@@ -452,6 +463,9 @@ describe("real WTFM documentation project", () => {
       encoding: "utf-8",
     });
     expect(allowed.status, allowed.stderr).toBe(0);
+    expect(allowed.stderr).toContain(
+      "WARNING --allow-dirty: the emitted artifact contains uncommitted source",
+    );
     const fragment = await readFile(
       path.join(
         checkout,
@@ -509,6 +523,9 @@ Untracked provenance probe.
       },
     );
     expect(untrackedAllowed.status, untrackedAllowed.stderr).toBe(0);
+    expect(untrackedAllowed.stderr).toContain(
+      "WARNING --allow-dirty: the emitted artifact contains uncommitted source",
+    );
     const untrackedFragment = await readFile(
       path.join(
         checkout,

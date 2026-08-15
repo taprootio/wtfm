@@ -72,7 +72,8 @@ removing the semantic payload.
 
 The build rejects tracked changes and non-ignored untracked files because
 `HEAD` would not identify the emitted source. `--allow-dirty` is an explicit
-local-preview escape hatch, not a publishing mode.
+local-preview escape hatch that prints a non-publishable warning, not a
+publishing mode.
 
 For a complete repository change, also run `npm run build`, `npm test`, and
 `npx @taprootio/trellis check`.
