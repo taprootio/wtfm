@@ -70,9 +70,9 @@ builds twice, compares managed bytes, blocks network entry points, checks real
 repository provenance and content, and crawls the ordinary static output after
 removing the semantic payload.
 
-The build rejects uncommitted tracked changes because `HEAD` would not identify
-the emitted source. `--allow-dirty` is an explicit local-preview escape hatch,
-not a publishing mode.
+The build rejects tracked changes and non-ignored untracked files because
+`HEAD` would not identify the emitted source. `--allow-dirty` is an explicit
+local-preview escape hatch, not a publishing mode.
 
 For a complete repository change, also run `npm run build`, `npm test`, and
 `npx @taprootio/trellis check`.

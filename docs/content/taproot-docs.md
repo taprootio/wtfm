@@ -87,9 +87,9 @@ npm run docs:build
 
 The output and artifact directory is exactly `docs/_site/`. The build runner
 binds the plugin to the checked-out 40-character Git revision and that commit's
-epoch. It fails when tracked files have uncommitted changes so those source
-bytes cannot silently disagree with the revision. It does not read credentials,
-contact Taproot, create a site, or publish.
+epoch. It fails when tracked files have changes or non-ignored untracked files
+are present so those source bytes cannot silently disagree with the revision.
+It does not read credentials, contact Taproot, create a site, or publish.
 
 Use `npm run docs:build -- --allow-dirty` only for local editorial iteration.
 That explicit opt-out permits an artifact whose content is not represented by

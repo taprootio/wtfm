@@ -28,9 +28,10 @@ focused determinism, provenance, no-network, and portable-site checks. These
 commands only build and validate local files; publishing is owned by the
 consuming Taproot workflow.
 
-The canonical build fails when tracked files have uncommitted changes because
-`HEAD` would not describe the emitted content. For local-only iteration, opt out
-explicitly with `npm run docs:build -- --allow-dirty`; never publish that output.
+The canonical build fails when tracked files have changes or non-ignored
+untracked files are present because `HEAD` would not describe the emitted
+content. For local-only iteration, opt out explicitly with
+`npm run docs:build -- --allow-dirty`; never publish that output.
 
 ## Entry points
 

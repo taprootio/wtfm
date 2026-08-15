@@ -16,7 +16,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validateArtifactDirectory } from "@taprootio/docs-artifact/node";
-import { taprootNavigation } from "../docs/navigation.js";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const packageJsonPath = path.join(repositoryRoot, "package.json");
@@ -51,6 +50,62 @@ const expectedResourceKeys = [
   "guide:validation-and-troubleshooting",
   "reference:plugin-configuration",
   "reference:renderers",
+];
+
+const expectedTaprootNavigation = [
+  {
+    label: "Start",
+    children: [
+      { label: "WTFM overview", resourceKey: "concept:overview" },
+      {
+        label: "Installation and setup",
+        resourceKey: "guide:getting-started",
+      },
+      {
+        label: "Plugin configuration",
+        resourceKey: "reference:plugin-configuration",
+      },
+    ],
+  },
+  {
+    label: "Authoring",
+    children: [
+      {
+        label: "Documents and surfaces",
+        resourceKey: "concept:documents-and-surfaces",
+      },
+      {
+        label: "Renderers and semantics",
+        resourceKey: "reference:renderers",
+      },
+      {
+        label: "Help and anchors",
+        resourceKey: "guide:help-and-anchors",
+      },
+    ],
+  },
+  {
+    label: "Output",
+    children: [
+      {
+        label: "Taproot Docs artifact",
+        resourceKey: "guide:taproot-docs-artifact",
+      },
+      {
+        label: "Validation and troubleshooting",
+        resourceKey: "guide:validation-and-troubleshooting",
+      },
+    ],
+  },
+  {
+    label: "Runtime",
+    children: [
+      {
+        label: "Client runtime and code blocks",
+        resourceKey: "concept:client-runtime",
+      },
+    ],
+  },
 ];
 
 const temporaryRoots = [];
@@ -283,7 +338,13 @@ describe("real WTFM documentation project", () => {
     expect(manifest.resources.map((resource) => resource.key)).toEqual(
       expectedResourceKeys,
     );
-    expect(manifest.navigation[0].items).toEqual(taprootNavigation);
+    expect(manifest.navigation[0].items).toEqual(expectedTaprootNavigation);
+    expect(
+      expectedTaprootNavigation
+        .flatMap((group) => group.children)
+        .map((item) => item.resourceKey)
+        .sort(),
+    ).toEqual(expectedResourceKeys);
     expect(manifest.redirects).toEqual([
       {
         from: "/installation/",
@@ -314,10 +375,24 @@ describe("real WTFM documentation project", () => {
     expect(fragments).toContain("wtfm-code-block");
     expect(fragments).toContain("help-manifest.json");
     expect(fragments).toContain("taproot-docs-manifest.json");
-    expect(fragments).toContain('id="what-wtfm-does"');
     expect(fragments).not.toMatch(
       /Fixture home|Fixture overview|TestWidget|test-widget|taprootio\/wtfm-fixture/u,
     );
+
+    const overview = manifest.resources.find(
+      (resource) => resource.key === "concept:overview",
+    );
+    const overviewVariant = overview.variants.find(
+      (variant) => variant.locale === "en-US",
+    );
+    const overviewBody = overviewVariant.fragments.find(
+      (fragment) => fragment.role === "body",
+    );
+    const overviewFragment = await readFile(
+      path.join(firstBuild, overviewBody.path),
+      "utf-8",
+    );
+    expect(overviewFragment).toContain('id="what-wtfm-does"');
   });
 
   it("produces byte-identical schema-v1 artifact output across builds", async () => {
@@ -356,7 +431,7 @@ describe("real WTFM documentation project", () => {
     await expect(access(secondNetworkLog)).rejects.toThrow();
   });
 
-  it("rejects dirty tracked sources unless local iteration explicitly opts out", async () => {
+  it("rejects uncommitted source changes unless local iteration explicitly opts out", async () => {
     const checkout = await makeIsolatedTrackedCheckout();
     const indexPath = path.join(checkout, "docs", "content", "index.md");
     const index = await readFile(indexPath, "utf-8");
@@ -369,7 +444,7 @@ describe("real WTFM documentation project", () => {
     });
     expect(rejected.status).toBe(1);
     expect(rejected.stderr).toContain(
-      "the working tree has uncommitted tracked changes",
+      "the working tree has uncommitted source changes",
     );
 
     const allowed = spawnSync(process.execPath, [script, "--allow-dirty"], {
@@ -389,6 +464,63 @@ describe("real WTFM documentation project", () => {
       "utf-8",
     );
     expect(fragment).toContain("Dirty provenance probe.");
+
+    await writeFile(indexPath, index);
+    const untrackedPath = path.join(
+      checkout,
+      "docs",
+      "content",
+      "untracked-provenance-probe.md",
+    );
+    await writeFile(
+      untrackedPath,
+      `---
+layout: layout.njk
+title: Untracked provenance probe
+description: Proves untracked build input is rejected.
+permalink: /untracked-provenance-probe/
+taprootDocs:
+  key: concept:untracked-provenance-probe
+  kind: concept
+  tags: [provenance, test]
+---
+
+## Untracked probe {#untracked-probe}
+
+Untracked provenance probe.
+`,
+    );
+
+    const untrackedRejected = spawnSync(process.execPath, [script], {
+      cwd: checkout,
+      encoding: "utf-8",
+    });
+    expect(untrackedRejected.status).toBe(1);
+    expect(untrackedRejected.stderr).toContain(
+      "the working tree has uncommitted source changes",
+    );
+
+    const untrackedAllowed = spawnSync(
+      process.execPath,
+      [script, "--allow-dirty"],
+      {
+        cwd: checkout,
+        encoding: "utf-8",
+      },
+    );
+    expect(untrackedAllowed.status, untrackedAllowed.stderr).toBe(0);
+    const untrackedFragment = await readFile(
+      path.join(
+        checkout,
+        "docs",
+        "_site",
+        "taproot-docs",
+        "fragments",
+        "concept-untracked-provenance-probe.en-us.html",
+      ),
+      "utf-8",
+    );
+    expect(untrackedFragment).toContain("Untracked provenance probe.");
   }, 30_000);
 
   it("fails closed instead of borrowing provenance from an enclosing repository", async () => {

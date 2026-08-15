@@ -72,12 +72,12 @@ if (!/^[0-9a-f]{40}$/u.test(revision)) {
 
 const { allowDirty, outputDirectory } = parseArguments(process.argv.slice(2));
 const workingTreeChanges = gitValue(
-  ["status", "--porcelain", "--untracked-files=no"],
+  ["status", "--porcelain", "--untracked-files=normal"],
   "working tree state",
 );
 if (workingTreeChanges !== "" && !allowDirty) {
   fail(
-    "the working tree has uncommitted tracked changes; artifact provenance would not describe the built source. Commit the changes or pass --allow-dirty for local iteration.",
+    "the working tree has uncommitted source changes; artifact provenance would not describe the built source. Commit the changes or pass --allow-dirty for local iteration.",
   );
 }
 
