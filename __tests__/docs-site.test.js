@@ -8,6 +8,7 @@ import {
   readFile,
   readdir,
   rm,
+  symlink,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -87,6 +88,17 @@ function assertBuildSucceeded(result) {
     result.status,
     [result.stdout, result.stderr].filter(Boolean).join("\n"),
   ).toBe(0);
+}
+
+function runDocsScript(output) {
+  return spawnSync(
+    process.execPath,
+    [docsBuildScriptPath, "--output", output],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf-8",
+    },
+  );
 }
 
 function runGit(cwd, args) {
@@ -319,6 +331,65 @@ describe("real WTFM documentation project", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(
       "the WTFM source directory is not its own Git worktree",
+    );
+  });
+
+  it("rejects unsafe cleanup targets without touching their content", async () => {
+    const workspaceTargetRoot = await mkdtemp(
+      path.join(repositoryRoot, ".wtfm-docs-output-safety-"),
+    );
+    temporaryRoots.push(workspaceTargetRoot);
+    const outsideOutput = path.join(workspaceTargetRoot, "_site");
+    const outsideSentinel = path.join(outsideOutput, "sentinel.txt");
+    await mkdir(outsideOutput);
+    await writeFile(outsideSentinel, "outside allowed roots\n");
+
+    const outsideResult = runDocsScript(outsideOutput);
+    expect(outsideResult.status).toBe(1);
+    expect(outsideResult.stderr).toContain(
+      "the output directory must be docs/_site or an _site directory under the operating-system temporary root",
+    );
+    await expect(readFile(outsideSentinel, "utf-8")).resolves.toBe(
+      "outside allowed roots\n",
+    );
+
+    const symlinkSafetyRoot = await mkdtemp(
+      path.join(tmpdir(), "wtfm-docs-symlink-safety-"),
+    );
+    temporaryRoots.push(symlinkSafetyRoot);
+    const realParent = path.join(symlinkSafetyRoot, "real-parent");
+    const realParentOutput = path.join(realParent, "_site");
+    const parentSentinel = path.join(realParentOutput, "sentinel.txt");
+    await mkdir(realParentOutput, { recursive: true });
+    await writeFile(parentSentinel, "symlinked parent\n");
+    const linkedParent = path.join(symlinkSafetyRoot, "linked-parent");
+    await symlink(realParent, linkedParent, "dir");
+
+    const parentResult = runDocsScript(path.join(linkedParent, "_site"));
+    expect(parentResult.status).toBe(1);
+    expect(parentResult.stderr).toContain(
+      "the output parent must be a real directory, not a symbolic link",
+    );
+    await expect(readFile(parentSentinel, "utf-8")).resolves.toBe(
+      "symlinked parent\n",
+    );
+
+    const targetParent = path.join(symlinkSafetyRoot, "target-parent");
+    const realTarget = path.join(symlinkSafetyRoot, "real-target");
+    const targetSentinel = path.join(realTarget, "sentinel.txt");
+    await mkdir(targetParent);
+    await mkdir(realTarget);
+    await writeFile(targetSentinel, "symlinked target\n");
+    const linkedTarget = path.join(targetParent, "_site");
+    await symlink(realTarget, linkedTarget, "dir");
+
+    const targetResult = runDocsScript(linkedTarget);
+    expect(targetResult.status).toBe(1);
+    expect(targetResult.stderr).toContain(
+      "the output target must be a real directory when it already exists",
+    );
+    await expect(readFile(targetSentinel, "utf-8")).resolves.toBe(
+      "symlinked target\n",
     );
   });
 
