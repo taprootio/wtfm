@@ -13,4 +13,10 @@ generated; do not hand-edit between the markers — edit the per-item files in
 | --- | --- | --- | --- | --- |
 | [WTFM0003](active/WTFM0003.md) | Epic — wtfm support for Taproot's Help & Docs Surfaces initiative | jereme | High | 2 |
 
+### Future
+
+| ID | Title | Owner | Priority | Effort |
+| --- | --- | --- | --- | --- |
+| [WTFM0012](active/WTFM0012.md) | Make rendered math deterministic across builds | jereme | Medium | 2 |
+
 <!-- END GENERATED:MILESTONES -->

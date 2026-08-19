@@ -8,9 +8,9 @@
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0012",
+  "nextId": "WTFM0013",
   "counts": {
-    "active": 1,
+    "active": 2,
     "completed": 10,
     "removed": 0
   },
@@ -32,6 +32,18 @@
       "owner": "jereme",
       "collaborators": [],
       "summary": "Umbrella for the wtfm capabilities Taproot's Help & Docs Surfaces initiative needs — stable anchors, composed reference surfaces, authored semantic help documents, a drift-checkable help manifest, and path-prefix portability — coordinating sequencing and the cross-repo release contracts."
+    },
+    {
+      "id": "WTFM0012",
+      "title": "Make rendered math deterministic across builds",
+      "status": "active",
+      "milestone": "Future",
+      "priority": "Medium",
+      "effort": 2,
+      "depends_on": [],
+      "owner": "jereme",
+      "collaborators": [],
+      "summary": "The markdown-it-mathjax3 → mathxyjax3 chain stamps a fresh random, variable-length scoping id into every rendered math block, so two builds of one revision differ byte-for-byte — replace the random ids with deterministic per-document ids inside wtfm so every consumer gets reproducible builds without site-side workarounds."
     },
     {
       "id": "WTFM0001",
