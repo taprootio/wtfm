@@ -102,5 +102,27 @@ Validate the result with the released package contract:
 npm run docs:validate
 ```
 
-That command runs `taproot-docs-validate docs/_site`; both producer and future
-consumer remain pinned to `@taprootio/docs-artifact@1.0.1`.
+That command runs `taproot-docs-validate docs/_site` using this repository's
+direct `@taprootio/docs-artifact@1.0.1` dependency. The publishing step validates
+the artifact again through publisher 1.2.0's own pinned artifact contract, 1.1.0.
+
+
+## Publish this repository on merge {#publish-this-repository-on-merge}
+
+The canonical WTFM repository publishes these managed Docs to
+[wtfm.taproot.io](https://wtfm.taproot.io/) after a merge to `main`. Its
+checked-in `taproot-docs-publisher.json` selects the site, managed mode, and
+`docs/_site/` artifact. The workflow builds and validates that exact checkout,
+then waits for staging and production deployment to complete. A successful
+upload alone does not mean that the documentation is live.
+
+Publishing is serialized per site. Immediately before staging, the publisher
+checks whether the triggering revision is still GitHub's current `main` head.
+If a newer merge has arrived, the older run succeeds as superseded without
+staging or promoting its release. The current run can then publish the newer
+source. Check the publication result and source revision when interpreting a
+green workflow run.
+
+This workflow uses a site-scoped key from the main-only GitHub Environment.
+Forks, pull requests, and Dependabot-triggered runs do not publish. A local
+`docs:build` still only builds files; it does not use a key or publish a site.
