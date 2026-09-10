@@ -52,3 +52,15 @@ treated as public identifiers. Choose them for durability, add redirects when
 routes move, and use the anchor checker when another application links to
 field-level help. WTFM fails duplicate or malformed identities instead of
 silently inventing replacements.
+
+
+## Follow the published source {#follow-the-published-source}
+
+The public WTFM documentation at [wtfm.taproot.io](https://wtfm.taproot.io/)
+is built from this repository's `main` branch. Each page's source link points
+to the exact published Git revision, so you can compare the guidance with the
+code that produced it.
+
+Documentation updates publish separately from the WTFM npm library. A merge
+can update this site without changing the library version; use your installed
+package version when checking whether an API is available in your project.
