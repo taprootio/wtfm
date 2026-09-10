@@ -26,6 +26,12 @@ npm run docs:validate
 Both outputs are written to `docs/_site/`. Run `npm run docs:test` for the
 focused determinism, provenance, no-network, and portable-site checks.
 
+The canonical build fails when tracked files have changes or non-ignored
+untracked files are present because `HEAD` would not describe the emitted
+content. For local-only iteration, opt out explicitly with
+`npm run docs:build -- --allow-dirty`; the build prints a warning because that
+output must never be published.
+
 ## Publishing Taproot Docs
 
 Merges to `main` in the canonical `taprootio/wtfm` repository build, validate,
@@ -48,12 +54,6 @@ publisher checks the current GitHub `main` head immediately before staging: a
 superseded run succeeds without publishing, allowing the current queued run to
 promote the newest source. If publishing fails, re-run the workflow for the
 current `main` commit.
-
-The canonical build fails when tracked files have changes or non-ignored
-untracked files are present because `HEAD` would not describe the emitted
-content. For local-only iteration, opt out explicitly with
-`npm run docs:build -- --allow-dirty`; the build prints a warning because that
-output must never be published.
 
 ## Entry points
 
