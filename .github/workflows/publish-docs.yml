@@ -1,0 +1,61 @@
+name: Publish Taproot Docs
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: taproot-docs-wtfm-production
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'taprootio/wtfm' &&
+      github.repository_id == '1162327960' &&
+      github.actor != 'dependabot[bot]' &&
+      github.triggering_actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment:
+      name: taproot-docs-production
+    steps:
+      - name: Check out the triggering revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build WTFM
+        run: npm run build
+
+      - name: Build Docs artifact
+        run: npm run docs:build
+
+      - name: Validate Docs artifact
+        run: npm run docs:validate
+
+      - name: Publish Docs
+        env:
+          TAPROOT_DOCS_PUBLISH_KEY: ${{ secrets.TAPROOT_DOCS_PUBLISH_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          node ./node_modules/@taprootio/docs-publisher/bin/taproot.js docs publish
+          --require-github-main-head --quiet

@@ -24,15 +24,36 @@ npm run docs:validate
 ```
 
 Both outputs are written to `docs/_site/`. Run `npm run docs:test` for the
-focused determinism, provenance, no-network, and portable-site checks. These
-commands only build and validate local files; publishing is owned by the
-consuming Taproot workflow.
+focused determinism, provenance, no-network, and portable-site checks.
 
 The canonical build fails when tracked files have changes or non-ignored
 untracked files are present because `HEAD` would not describe the emitted
 content. For local-only iteration, opt out explicitly with
 `npm run docs:build -- --allow-dirty`; the build prints a warning because that
 output must never be published.
+
+## Publishing Taproot Docs
+
+Merges to `main` in the canonical `taprootio/wtfm` repository build, validate,
+and publish the managed artifact in `docs/_site/` through
+`.github/workflows/publish-docs.yml`. The checked-in
+`taproot-docs-publisher.json` selects its exact production site and managed
+mode. This is separate from publishing the WTFM library: a documentation merge
+does not need a package-version bump, and the first eligible merge publishes
+the site.
+
+The workflow runs only for canonical `main` pushes. Forks, pull requests, and
+Dependabot-triggered runs never reach the publishing step, so they receive no
+publishing credential. Its `taproot-docs-production` Environment is restricted
+to `main`; the site-scoped `TAPROOT_DOCS_PUBLISH_KEY` is used only by the
+publisher and must never be logged.
+
+Production runs queue by arrival and stage/promote one artifact at a time.
+Queue arrival order may differ from commit order. The
+publisher checks the current GitHub `main` head immediately before staging: a
+superseded run succeeds without publishing, allowing the current queued run to
+promote the newest source. If publishing fails, re-run the workflow for the
+current `main` commit.
 
 ## Entry points
 
