@@ -1,7 +1,7 @@
 {
   "name": "@taprootio/wtfm",
-  "version": "0.16.0",
-  "description": "WTFM — documentation tooling for Custom Elements Manifest-based component libraries",
+  "version": "0.17.0",
+  "description": "WTFM \u2014 documentation tooling for Custom Elements Manifest-based component libraries",
   "type": "module",
   "bin": {
     "wtfm-check-help-anchors": "./dist/server/check-help-anchors-cli.js"
@@ -94,6 +94,10 @@
     },
     "./validate-manifest": {
       "default": "./dist/server/validate-manifest.js"
+    },
+    "./discovery": {
+      "types": "./dist/server/discovery.d.ts",
+      "default": "./dist/server/discovery.js"
     }
   },
   "files": [

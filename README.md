@@ -326,3 +326,42 @@ the current build's own templates — and the build then fails closed instead
 of overwriting or deleting it. Site content is never silently destroyed;
 route pages or passthrough copies targeting the reserved namespace are
 build errors.
+
+## Portable site discovery
+
+Opt in to discovery generation after Eleventy renders the final HTML:
+
+```js
+eleventyConfig.addPlugin(wtfmPlugin, {
+  cemPath: "./custom-elements.json",
+  discovery: {
+    origin: "https://docs.example.com", // production origin, even in local previews
+    strict: true,
+    exclude: ["/examples/", "/internal/"],
+  },
+});
+```
+
+The plugin owns `sitemap.xml` and `robots.txt` when this option is enabled.
+It sorts and escapes final page URLs, excludes noindex/refresh/404/internal
+outputs and canonical aliases, and never invents last-modified dates. An
+exclusion ending in `/` covers that subtree; other exclusions match exactly.
+Declare homepage icons in your HTML and copy them to stable local URLs using
+Eleventy's passthrough copy. An icon declaration with broken local files,
+unsupported image signatures, or mismatched types fails the build. These are
+lightweight format checks, not a complete image decoder or security sanitizer.
+Missing homepage/icon/indexable-page recommendations warn by default; `strict`
+turns them into errors. A declared icon does not require `/favicon.ico`.
+Use a local icon rather than an external URL so build verification is offline.
+
+Other producers can import `emitDiscovery` and `resolveDiscoveryOptions` from
+`@taprootio/wtfm/discovery`. Pass `{ results, outputDirectory, options, warn? }`;
+each final HTML result has `url`, `outputPath` (ending `.html`), and `content`.
+Run after pages and assets have been written. The return value contains sorted
+`urls` and `warnings`. No filesystem or markup changes happen when the option
+is absent. Sites above 50,000 URLs require a separate sitemap-index solution.
+
+This generates the portable site's discovery files. Taproot managed Docs
+creates its own metadata from semantic content; exact/prebuilt Docs serves
+these producer-built files unchanged. Staging crawl restrictions belong to
+the serving platform, not to an environment-dependent production sitemap.

@@ -23,6 +23,7 @@ export default function configureDocs(eleventyConfig) {
 
   eleventyConfig.addPlugin(wtfmPlugin, {
     cemPath: fileURLToPath(new URL("./custom-elements.json", import.meta.url)),
+    discovery: { origin: "https://wtfm.taproot.io", strict: true },
     taprootDocs: {
       source: {
         repositoryId: "1162327960",
