@@ -1,4 +1,5 @@
 import markdownIt from "markdown-it";
+import { emitDiscovery, resolveDiscoveryOptions } from "./discovery.js";
 import mathjax3 from "markdown-it-mathjax3";
 import * as prettier from "prettier";
 import { readFileSync } from "fs";
@@ -197,6 +198,8 @@ function buildFunctionSignature(decl) {
  *   add their keys to the `sections` option or use `@docSections` in
  *   the component source.
  *
+ * @param {{origin: string, strict?: boolean, exclude?: string[]}} [options.discovery]
+ *   Opt-in sitemap/robots generation and homepage icon checks from final output.
  * @param {object} [options.taprootDocs] - Opt-in Taproot Docs artifact mode
  *   (WTFM0010). When present, the build additionally emits the
  *   `@taprootio/docs-artifact` manifest, semantic fragments, and declared
@@ -224,6 +227,7 @@ export default function wtfmPlugin(eleventyConfig, options = {}) {
   // not partway through an emit. `null` means the mode is off and the
   // plugin behaves exactly as before.
   const taprootDocsOptions = resolveTaprootDocsOptions(taprootDocs);
+  const discoveryOptions = resolveDiscoveryOptions(options.discovery);
   let taprootDocsDocuments = null;
   if (taprootDocsOptions) {
     eleventyConfig.addCollection("taprootDocsDocuments", (collectionApi) => {
@@ -638,8 +642,9 @@ type ${decl.name} = ${decl.type.text}
   });
 
   // ── Versioned help manifest ──────────────────────────────────
-  eleventyConfig.on("eleventy.after", async ({ directories, outputMode, results }) => {
+  eleventyConfig.on("eleventy.after", async ({ directories, outputMode, results, incremental }) => {
     if (outputMode !== "fs") return;
+    if (discoveryOptions && incremental) throw new Error("wtfm discovery requires a full build; disable --incremental");
     const manifest = buildHelpManifest(surfaces, results, { pathPrefix });
     const outputDirectory = resolve(directories.output);
     await mkdir(outputDirectory, { recursive: true });
@@ -648,6 +653,12 @@ type ${decl.name} = ${decl.type.text}
       `${JSON.stringify(manifest, null, 2)}\n`,
       "utf-8",
     );
+
+    // Discovery needs the complete render result set. Do not enable incremental
+    // builds with discovery: partial results would omit unchanged sitemap pages.
+    if (discoveryOptions) {
+      await emitDiscovery({ results, outputDirectory, options: discoveryOptions });
+    }
 
     // ── Taproot Docs artifact (opt-in, WTFM0010) ────────────────
     if (taprootDocsOptions) {

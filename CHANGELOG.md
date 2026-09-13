@@ -1,3 +1,9 @@
+## 0.17.0 (2026-09-12)
+
+### Features
+
+- Add opt-in portable sitemap and robots generation, homepage icon checks, and a strict discovery build profile, also exported through `@taprootio/wtfm/discovery` (WTFM0012).
+
 ## [0.16.0](https://github.com/taprootio/wtfm/compare/v0.15.0...v0.16.0) (2026-08-06)
 
 

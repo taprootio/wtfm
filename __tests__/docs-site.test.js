@@ -266,6 +266,20 @@ afterAll(async () => {
 });
 
 describe("real WTFM documentation project", () => {
+  it("publishes portable discovery files from the actual docs build", async () => {
+    const sitemap = await readFile(path.join(firstBuild, "sitemap.xml"), "utf8");
+    const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/gu)].map((match) => match[1]);
+    expect(locations).toHaveLength(9);
+    expect(locations).toContain("https://wtfm.taproot.io/");
+    for (const location of locations) {
+      const route = new URL(location).pathname;
+      await access(path.join(firstBuild, route, "index.html"));
+    }
+    expect(sitemap).toBe(await readFile(path.join(secondBuild, "sitemap.xml"), "utf8"));
+    expect(await readFile(path.join(firstBuild, "robots.txt"), "utf8")).toContain("Sitemap: https://wtfm.taproot.io/sitemap.xml");
+    await access(path.join(firstBuild, "assets/favicon.svg"));
+  });
+
   it("exposes documented build, validation, and focused test commands", async () => {
     const packageJson = JSON.parse(await readFile(packageJsonPath, "utf-8"));
     expect(packageJson.scripts).toMatchObject({

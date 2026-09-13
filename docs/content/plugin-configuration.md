@@ -89,3 +89,23 @@ repository id is never inferred from the owner/name locator.
 
 See [Taproot Docs artifact mode](/artifact-mode/) for the full example and
 failure model.
+
+## Portable discovery metadata {#portable-discovery}
+
+Set `discovery: { origin: "https://docs.example.com", strict: true }` to
+emit a production sitemap and robots file from final rendered HTML. Keep
+`origin` set to the production HTTPS origin even during local preview.
+Optional `exclude: ["/examples/", "/internal/"]` omits whole route subtrees;
+paths without a trailing slash match exactly. Noindex pages, redirects,
+canonical aliases, 404s, and internal artifact output are excluded automatically.
+
+Declare the homepage favicon with `<link rel="icon" href="/assets/icon.svg">`
+and copy the corresponding file through Eleventy. Local icon files and their
+image signatures/types are checked after the build; broken declarations fail.
+Missing recommendations warn by default; `strict: true` makes them fail too.
+The helper does not fetch external icons, rewrite HTML, or invent modification
+dates. A root `/favicon.ico` is optional when a valid favicon is declared.
+
+This option owns the portable output's `sitemap.xml` and `robots.txt`. Taproot
+managed Docs renders its own discovery metadata; exact Docs publishes these
+files unchanged. Hosting controls staging crawl restrictions independently.

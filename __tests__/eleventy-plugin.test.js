@@ -138,6 +138,13 @@ describe("wtfmPlugin", () => {
     readFileSync.mockReturnValue(JSON.stringify(fakeCem));
   });
 
+  it("rejects incremental discovery before accessing or writing the output tree", async () => {
+    const config = createMockEleventyConfig();
+    wtfmPlugin(config, { cemPath: "/fake/cem.json", discovery: { origin: "https://docs.example.com" } });
+    // No directories: the guard must run before any output filesystem access.
+    await expect(config.events["eleventy.after"]({ outputMode: "fs", incremental: true, results: [] })).rejects.toThrow(/requires a full build; disable --incremental/);
+  });
+
   it("registers the renderDocs shortcode", () => {
     const config = createMockEleventyConfig();
     wtfmPlugin(config, { cemPath: "/fake/cem.json" });
