@@ -25,9 +25,11 @@ export function resolveDiscoveryOptions(value) {
 /** Parse actual elements, never metadata-looking text inside comments or scripts. */
 export function discoveryMetadata(html) {
   const metadata = { icons: [], canonicals: [], noindex: false, redirect: false };
-  const tree = posthtml().process(html, { sync: true, lowerCaseTags: true, lowerCaseAttributeNames: true }).tree;
+  const tree = posthtml().process(html, { sync: true, lowerCaseTags: true, lowerCaseAttributeNames: true, decodeEntities: true }).tree;
   const visit = (nodes) => { for (const node of nodes) {
     if (typeof node !== "object") continue;
+    // These subtrees contain inert markup, not live discovery declarations.
+    if (["template", "noscript", "textarea"].includes(node.tag)) continue;
     const attrs = node.attrs ?? {};
     if (node.tag === "meta") {
       if (["robots", "googlebot"].includes(String(attrs.name).toLowerCase()) && tokens(attrs.content).some((token) => token === "noindex" || token === "none")) metadata.noindex = true;
@@ -50,7 +52,9 @@ function imageType(bytes) {
   if (bytes.length >= 30 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP" && bytes.readUInt32LE(4) + 8 === bytes.length) return "image/webp";
   if (bytes.length >= 14 && /^GIF8[79]a/u.test(bytes.toString("ascii", 0, 6)) && bytes.readUInt16LE(6) && bytes.readUInt16LE(8)) return "image/gif";
   if (bytes.length >= 4 && bytes[0] === 255 && bytes[1] === 216 && bytes[bytes.length - 2] === 255 && bytes[bytes.length - 1] === 217) return "image/jpeg";
-  const text = bytes.toString("utf8").replace(/^\uFEFF/u, "");
+  const text = bytes.toString("utf8").replace(/^\uFEFF/u, "").replace(
+    /^\s*(?:(?:<\?xml[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE\s+svg\b(?:[^>"'\[]|"[^"]*"|'[^']*'|\[[\s\S]*?\])*>)\s*)*/iu, "",
+  );
   // This is a trusted producer build check, not an SVG sanitizer or decoder.
   if (/^\s*(?:<\?xml[^>]*>\s*)?<svg[\s>]/u.test(text) && /<\/svg>\s*$/u.test(text)) return "image/svg+xml";
   return null;
@@ -70,7 +74,10 @@ async function checkIcon(icon, options, outputDirectory) {
   const actual = imageType(await readFile(filename));
   const types = { ".png": "image/png", ".ico": "image/vnd.microsoft.icon", ".svg": "image/svg+xml", ".webp": "image/webp", ".gif": "image/gif", ".jpg": "image/jpeg", ".jpeg": "image/jpeg" };
   const declared = icon.type === "image/x-icon" ? "image/vnd.microsoft.icon" : icon.type;
-  if (!actual || types[path.extname(filename).toLowerCase()] !== actual || (declared && declared !== actual)) throw new Error(`icon ${icon.href} has unsupported or mismatched image bytes, extension, or declared type`);
+  if (!actual) throw new Error(`icon ${icon.href} has unsupported or invalid image bytes`);
+  const extension = path.extname(filename).toLowerCase();
+  if (types[extension] !== actual) throw new Error(`icon ${icon.href} has mismatched extension ${extension}: bytes are ${actual}, expected ${types[extension] ?? "a supported image extension"}`);
+  if (declared && declared !== actual) throw new Error(`icon ${icon.href} has mismatched declared type ${declared}: bytes are ${actual}`);
 }
 
 /**

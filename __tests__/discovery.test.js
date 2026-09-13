@@ -27,6 +27,31 @@ describe("portable discovery", () => {
     await emitDiscovery({ ...input, results: [...input.results].reverse() });
     expect(await readFile(path.join(input.outputDirectory, "sitemap.xml"), "utf8")).toBe(sitemap);
   });
+  it("ignores inert metadata and decodes canonical attribute entities", async () => {
+    const input = await fixture();
+    for (const tag of ["template", "noscript", "textarea"]) {
+      input.results.push(page(`/${tag}/`, `<${tag}><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=/"><link rel="canonical" href="https://wrong.example/"></${tag}>`));
+    }
+    input.results.push(page("/a&b/", '<link rel="canonical" href="/a&amp;b/">'));
+    expect((await emitDiscovery(input)).urls).toEqual([
+      "https://docs.example.com/", "https://docs.example.com/a&b/",
+      "https://docs.example.com/noscript/", "https://docs.example.com/template/", "https://docs.example.com/textarea/",
+    ]);
+  });
+  it("accepts SVG exports with XML comments and a doctype prolog", async () => {
+    const input = await fixture();
+    const icon = path.join(input.outputDirectory, "icon.svg");
+    const svg = await readFile(icon, "utf8");
+    await writeFile(icon, '<?xml version="1.0"?>\n<!-- Exported by a vector editor -->\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n' + svg);
+    expect((await emitDiscovery(input)).warnings).toEqual([]);
+  });
+  it("identifies PNG bytes stored under an ICO extension", async () => {
+    const input = await fixture();
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6SAAAAABJRU5ErkJggg==", "base64");
+    await writeFile(path.join(input.outputDirectory, "favicon.ico"), png);
+    input.results[0].content = '<link rel="icon" href="/favicon.ico">';
+    await expect(emitDiscovery(input)).rejects.toThrow(/extension .ico: bytes are image\/png, expected image\/vnd.microsoft.icon/);
+  });
   it("applies exact and subtree exclusions without excluding similar prefixes", async () => {
     const input = await fixture(); input.options.exclude = ["/private/", "/one.html"];
     input.results.push(...["/private/child/", "/privateer/", "/one.html", "/one.html/child/"].map((url) => page(url)));
@@ -38,7 +63,7 @@ describe("portable discovery", () => {
   });
   it("rejects HTML masquerading as an icon", async () => {
     const input = await fixture(); await writeFile(path.join(input.outputDirectory, "icon.svg"), "<!doctype html><h1>Not found</h1>");
-    await expect(emitDiscovery(input)).rejects.toThrow(/mismatched/);
+    await expect(emitDiscovery(input)).rejects.toThrow(/unsupported or invalid image bytes/);
   });
   it("warns for absent recommendations and fails them in strict mode", async () => {
     const input = await fixture(); input.results = [page("/", "<h1>No icon</h1>")]; input.options.strict = false;

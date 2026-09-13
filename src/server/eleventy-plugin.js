@@ -642,8 +642,9 @@ type ${decl.name} = ${decl.type.text}
   });
 
   // ── Versioned help manifest ──────────────────────────────────
-  eleventyConfig.on("eleventy.after", async ({ directories, outputMode, results }) => {
+  eleventyConfig.on("eleventy.after", async ({ directories, outputMode, results, incremental }) => {
     if (outputMode !== "fs") return;
+    if (discoveryOptions && incremental) throw new Error("wtfm discovery requires a full build; disable --incremental");
     const manifest = buildHelpManifest(surfaces, results, { pathPrefix });
     const outputDirectory = resolve(directories.output);
     await mkdir(outputDirectory, { recursive: true });
@@ -653,6 +654,8 @@ type ${decl.name} = ${decl.type.text}
       "utf-8",
     );
 
+    // Discovery needs the complete render result set. Do not enable incremental
+    // builds with discovery: partial results would omit unchanged sitemap pages.
     if (discoveryOptions) {
       await emitDiscovery({ results, outputDirectory, options: discoveryOptions });
     }

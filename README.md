@@ -329,6 +329,9 @@ build errors.
 
 ## Portable site discovery
 
+Discovery requires a full Eleventy build; do not combine it with `--incremental`.
+Partial render results cannot describe the complete sitemap.
+
 Opt in to discovery generation after Eleventy renders the final HTML:
 
 ```js
