@@ -8,10 +8,10 @@
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0013",
+  "nextId": "WTFM0014",
   "counts": {
     "active": 2,
-    "completed": 10,
+    "completed": 11,
     "removed": 0
   },
   "tasks": [
@@ -188,6 +188,19 @@
       "collaborators": [],
       "summary": "Add a real, portable WTFM documentation site that uses the repository's local plugin implementation and emits a deterministic schema-v1 Taproot Docs artifact for local dogfooding and later hosted publication.",
       "completed_on": "2026-08-15"
+    },
+    {
+      "id": "WTFM0013",
+      "title": "Generate and check portable documentation discovery metadata",
+      "status": "completed",
+      "milestone": "Taproot Docs — GitHub to Production",
+      "priority": "High",
+      "effort": 5,
+      "depends_on": [],
+      "owner": null,
+      "collaborators": [],
+      "summary": "Add opt-in production sitemap and robots generation from final Eleventy pages, icon asset checks, and a strict discovery build profile for portable and exact documentation producers.",
+      "completed_on": "2026-09-12"
     }
   ]
 }
