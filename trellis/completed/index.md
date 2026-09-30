@@ -6,6 +6,7 @@ a task and regenerate (`npx @taprootio/trellis generate`).
 <!-- BEGIN GENERATED:COMPLETED -->
 | ID | Title | Summary | Completed |
 | --- | --- | --- | --- |
+| [WTFM0014](tasks/WTFM0014.md) | Republish WTFM Docs so both retained production releases carry redirect markers | Two content-free merges to main advanced WTFM's production Docs releases so Taproot's marker-only redirect cutover (TR00968) does not drop WTFM's redirects. | 2026-09-30 |
 | [WTFM0013](tasks/WTFM0013.md) | Generate and check portable documentation discovery metadata | Add opt-in production sitemap and robots generation from final Eleventy pages, icon asset checks, and a strict discovery build profile for portable and exact documentation producers. | 2026-09-12 |
 | [WTFM0011](tasks/WTFM0011.md) | Build WTFM's real documentation site and Taproot Docs artifact | Add a real, portable WTFM documentation site that uses the repository's local plugin implementation and emits a deterministic schema-v1 Taproot Docs artifact for local dogfooding and later hosted publication. | 2026-08-15 |
 | [WTFM0010](tasks/WTFM0010.md) | Emit Taproot Docs artifacts from the Eleventy build | Add an opt-in, additive Taproot Docs build mode that emits the @taprootio/docs-artifact@1.0.1 manifest, semantic fragments, and declared assets beside the ordinary portable _site output, deterministically and fail-closed, with a real Eleventy fixture and CI conformance command. | 2026-08-06 |
