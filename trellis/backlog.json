@@ -8,10 +8,10 @@
     "v1",
     "Future"
   ],
-  "nextId": "WTFM0014",
+  "nextId": "WTFM0015",
   "counts": {
     "active": 2,
-    "completed": 11,
+    "completed": 12,
     "removed": 0
   },
   "tasks": [
@@ -201,6 +201,19 @@
       "collaborators": [],
       "summary": "Add opt-in production sitemap and robots generation from final Eleventy pages, icon asset checks, and a strict discovery build profile for portable and exact documentation producers.",
       "completed_on": "2026-09-12"
+    },
+    {
+      "id": "WTFM0014",
+      "title": "Republish WTFM Docs so both retained production releases carry redirect markers",
+      "status": "completed",
+      "milestone": "Taproot Docs — GitHub to Production",
+      "priority": "High",
+      "effort": 1,
+      "depends_on": [],
+      "owner": null,
+      "collaborators": [],
+      "summary": "Two content-free merges to main advanced WTFM's production Docs releases so Taproot's marker-only redirect cutover (TR00968) does not drop WTFM's redirects.",
+      "completed_on": "2026-09-30"
     }
   ]
 }
